@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src">
+		<attributes>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="P4Ming/lib"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry exported="true" kind="con" path="GROOVY_SUPPORT"/>
+	<classpathentry kind="lib" path="lib/core.jar"/>
+	<classpathentry kind="lib" path="lib/gluegen-rt-natives-macosx-universal.jar"/>
+	<classpathentry kind="lib" path="lib/gluegen-rt.jar"/>
+	<classpathentry kind="lib" path="lib/jogl-natives-macosx-universal.jar"/>
+	<classpathentry kind="lib" path="lib/jogl.jar"/>
+	<classpathentry kind="lib" path="lib/opengl.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
