@@ -2,6 +2,7 @@ package com.chris3000.p4ming.editor;
 
 import java.awt.BorderLayout;
 import java.awt.Insets;
+import java.awt.Point;
 
 import javax.swing.JPanel;
 import javax.swing.JFrame;
@@ -14,15 +15,20 @@ import javax.swing.JButton;
 import java.awt.GridBagConstraints;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
+import java.awt.event.KeyListener;
+import javax.swing.event.CaretEvent;
+import javax.swing.event.CaretListener;
+import javax.swing.text.BadLocationException;
 
 import com.chris3000.p4ming.P4Ming;
 
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.Font;
 
-public class P4Editor extends JFrame {
+public class P4Editor extends JFrame{
 	private boolean started = false;
 	private static final long serialVersionUID = 1L;
 	private JPanel jContentPane = null;
@@ -36,7 +42,7 @@ public class P4Editor extends JFrame {
 	private JTextField heightField = null;
 	private JButton submitButton = null;
 	//parent class
-	P4Ming p4m;
+	P4Ming p4m;  //  @jve:decl-index=0:
 	/**
 	 * This is the default constructor
 	 */
@@ -117,10 +123,58 @@ public class P4Editor extends JFrame {
 			editorTextArea.setFont(new Font("Monaco", Font.PLAIN, 12));
 			editorTextArea.setTabSize(3);
 			editorTextArea.setWrapStyleWord(true);
+			editorTextArea.addCaretListener(new CaretListener() {
+      public void caretUpdate(CaretEvent caretEvent) {
+    	  try {
+    	  int dot = caretEvent.getDot();
+    	  int mark = caretEvent.getMark();
+    	  Point dotLoc = new Point();
+    	  dotLoc.y = editorTextArea.getLineOfOffset(dot);
+    	  dotLoc.x = dot-editorTextArea.getLineStartOffset(dotLoc.y);
+    	  if(mark != dot){ //selection
+        	  Point markLoc = new Point();
+        	  markLoc.y = editorTextArea.getLineOfOffset(dot);
+        	  markLoc.x = dot-editorTextArea.getLineStartOffset(dotLoc.y);
+    		  p4m.caretEvent(dotLoc,markLoc);
+    	  } else { 
+    		  p4m.caretEvent(dotLoc);
+    	  }
+		} catch (BadLocationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
+       // System.out.println("Dot: "+ caretEvent.getDot()+" Mark: "+caretEvent.getMark());
+        
+      }
+    });
+			editorTextArea.addKeyListener(new KeyListener(){
+				@Override
+				public void keyPressed(KeyEvent e) {
+					p4m.keyPressed(e.getKeyChar());
+					
+				}
+
+				@Override
+				public void keyReleased(KeyEvent e) {
+					// TODO Auto-generated method stub
+					
+				}
+
+				@Override
+				public void keyTyped(KeyEvent e) {
+					// TODO Auto-generated method stub
+					
+				}
+			});
 		}
 		return editorTextArea;
 	}
+
+public void getCurrentText(){
+	p4m.setText(editorTextArea.getText());
+}
+		
 
 	/**
 	 * This method initializes controlPanel	
@@ -188,7 +242,7 @@ public class P4Editor extends JFrame {
 	private JTextField getWidthField() {
 		if (widthField == null) {
 			widthField = new JTextField();
-			widthField.setText("320");
+			widthField.setText("800");
 			widthField.setPreferredSize(new Dimension(50, 28));
 		}
 		return widthField;
@@ -202,7 +256,7 @@ public class P4Editor extends JFrame {
 	private JTextField getHeightField() {
 		if (heightField == null) {
 			heightField = new JTextField();
-			heightField.setText("240");
+			heightField.setText("600");
 			heightField.setPreferredSize(new Dimension(50, 28));
 		}
 		return heightField;

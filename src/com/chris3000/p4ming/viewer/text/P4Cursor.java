@@ -5,7 +5,7 @@ public class P4Cursor {
 	public int y = 0;
 	public boolean cursorBlinking = true;
 	private boolean cursorVisible = true;
-	private long blinkRate = 1000;
+	private long blinkRate = 750;
 	private long lastBlink = System.currentTimeMillis();
 	
 	
@@ -21,6 +21,11 @@ public class P4Cursor {
 				cursorVisible = !cursorVisible;
 			}
 		}
+	}
+	
+	public void setLocation(int locX, int locY){
+		x = locX;
+		y = locY;
 	}
 	
 	public void blinkOn(){

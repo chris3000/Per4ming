@@ -1,5 +1,6 @@
 package com.chris3000.p4ming.viewer.text;
 
+import java.awt.Point;
 import java.util.ArrayList;
 
 import processing.core.PApplet;
@@ -8,6 +9,7 @@ import processing.core.PFont;
 public class P4Text {
 	public static PApplet p = null;
 	private final static char cr = '\n';
+	private final static String crStr = "\n";
 	/**
 	 * back of napkin calculations...
 	 * at 1.0 every char = 40 pixels
@@ -21,7 +23,7 @@ public class P4Text {
 	/** The size we should eventually be set to.*/
 	float targetScale = 1;
 	/** How fast to scale the text*/
-	float scaleVel = 0.005f;
+	float scaleVel = 0.07f;
 	/**The font.  Monaco by default*/
 	PFont font;
 	/** Smallest size */
@@ -38,12 +40,14 @@ public class P4Text {
 	int leftPadding = 10; //space from left screen, in pixels.
 	/**Holds line data*/
 	ArrayList<P4TextLine> lines = new ArrayList<P4TextLine>();
-	/***
-	 * Holds cursor location data
-	 * */
+	/** Holds cursor location data */
 	P4Cursor cursor = new P4Cursor();
+	/** should be true if an external editor is sending caret data */
+	public boolean caretOverride = true;
+	/** sets alpha of darkened bg */
+	private float bgAlpha = 128;
 	private boolean cursorEnabled = true;
-
+	private boolean showFramerate = true;
 	public void init(){
 		lines.add(new P4TextLine());
 		maxChars = p.width/10;
@@ -61,10 +65,12 @@ public class P4Text {
 			if (targetScale > currentScale){
 				dir = -1; //up
 			}
-			currentScale = currentScale - (scaleVel*dir*(dist/dist));
+			
+			currentScale = currentScale - (dist*scaleVel*dir);
 			//are we close enough?
-			if (dist < scaleVel){
+			if ((dist*2*scaleVel)< 0.0001){
 				currentScale = targetScale;
+				p.println("settled");
 			}
 		}
 		if (cursorEnabled){
@@ -73,6 +79,10 @@ public class P4Text {
 	}
 	
 	public void render(){
+		p.frustum(p.width*-1, p.width, p.height*-1, p.height, 1038, 0);
+		p.fill(0,bgAlpha);
+		p.rect(0,0,p.width, p.height);
+		p.fill(255);
 		p.textFont(font);
 		p.pushMatrix();
 			float h = (((float)p.width / 2) - (lines.size()*(maxLineSpace*currentScale)));
@@ -81,11 +91,17 @@ public class P4Text {
 			p.text(getText(), 0, 0, 0);
 			//draw cursor
 			if (cursorEnabled && cursor.isVisible()){
+				p.fill(255,255,255,128);
 				p.noStroke();
-				p.rect(cursor.x*38+10, cursor.y*maxLineSpace+15, 20, -70);
+				p.rect(cursor.x*38, cursor.y*maxLineSpace+15, 40, -70);
 			}
 		p.popMatrix();
-		p.text(""+currentScale,10,500);	
+		//p.text(""+currentScale,10,500);
+		if (showFramerate){
+			p.fill(255);
+			p.textFont(font, 24);
+			p.text(""+p.frameRate,5,p.height-30);
+		}
 	}
 	
 	public String getText(){
@@ -96,47 +112,89 @@ public class P4Text {
 		return sb.toString();
 	}
 	
+	/** Replace all of the current text with new text */
+	public void setText(String text){
+		ArrayList<P4TextLine> newLines = new ArrayList<P4TextLine>();
+		if (text != null && text.length() > 0){
+			String[] _lines = text.split(crStr);
+			for (int i = 0; i < _lines.length; i++) {
+				newLines.add(new P4TextLine(_lines[i]));
+			}
+		} else { //blow away all of the old text
+			newLines.add(new P4TextLine());	
+		}
+		lines = newLines;
+		calcTargetScale();
+		cursor.blinkOn();
+		
+	}
+	
+	/** add new character, delete character, make new line, or move cursor */
 	public void add(char key){
-
-		if (key == cr){
+		if(key == p.CODED) { 
+			// pts
+			if (p.keyCode == p.UP) { 
+				cursorUp();
+			} 
+			else if (p.keyCode == p.DOWN) { 
+				cursorDown();
+			} 
+			// extrusion length
+			if (p.keyCode == p.LEFT) { 
+				cursorLeft();
+			} 
+			else if (p.keyCode == p.RIGHT) { 
+				cursorRight();
+			} 
+		} else {
+			if (key == cr){
 				P4TextLine line = lines.get(cursor.y);
 				//get the remainder of chars, if any
 				String remainder = line.remove(cursor.x, line.length);
 				lines.add(cursor.y+1, new P4TextLine(remainder));
 				cursor.down(0);
-		} else if (key == p.BACKSPACE){
-			P4TextLine line = lines.get(cursor.y);
-			if (cursor.x > 0){
-				line.delete(cursor.x-1);
-				cursorLeft();
-			} else {
-				//we're removing the "enter" char
-				//is line empty?
-				if (line.length == 0){
-					//delete the line, unless it's the first line
-					if (lines.size() > 1){
-					lines.remove(cursor.y);
+			} else if (key == p.BACKSPACE){
+				P4TextLine line = lines.get(cursor.y);
+				if (cursor.x > 0){
+					line.delete(cursor.x-1);
 					cursorLeft();
-					}
 				} else {
-					//we're not on the first line...
-					if (cursor.y >= 1){
-					P4TextLine previousLine = lines.get(cursor.y-1);
-					previousLine.add(line.toString());
-					lines.remove(cursor.y);
+					//we're removing the "enter" char
+					//is line empty?
+					if (line.length == 0){
+						//delete the line, unless it's the first line
+						if (lines.size() > 1){
+							lines.remove(cursor.y);
+							cursorLeft();
+						}
+					} else {
+						//we're not on the first line...
+						if (cursor.y >= 1){
+							P4TextLine previousLine = lines.get(cursor.y-1);
+							previousLine.add(line.toString());
+							lines.remove(cursor.y);
+						}
+						cursorLeft();
 					}
-					cursorLeft();
 				}
+			} else {
+				P4TextLine line = lines.get(cursor.y);
+				line.add(key, cursor.x);
+				calcTargetScale();
+				//move cursor
+				cursor.right(line.length);
 			}
-		} else {
-			P4TextLine line = lines.get(cursor.y);
-			line.add(key, cursor.x);
 			calcTargetScale();
-			//move cursor
-			cursor.right(line.length);
 		}
-		calcTargetScale();
+
 		cursor.blinkOn();
+	}
+	
+	public void setBgAlpha(float alpha){
+		if (alpha <= 1){
+			alpha = alpha*255;
+		}
+		bgAlpha = alpha;
 	}
 	
 	private void calcTargetScale(){
@@ -152,37 +210,49 @@ public class P4Text {
 		if (targetScale < minScl) targetScale = minScl;
 	}
 	
-	public void cursorUp(){
-		if (cursor.y > 0){
-			P4TextLine line = lines.get(cursor.y-1);
-			cursor.up(line.length);
-		} else {
-			cursor.up(0);
-		}
+	public void caretEvent(Point dotLoc){
+		cursor.setLocation(dotLoc.x, dotLoc.y);
 	}
 	
+	public void cursorUp(){
+		if (!caretOverride){
+			if (cursor.y > 0){
+				P4TextLine line = lines.get(cursor.y-1);
+				cursor.up(line.length);
+			} else {
+				cursor.up(0);
+			}
+		}
+	}
+
 	public void cursorDown(){
-		if (cursor.y < lines.size()-1){
-			P4TextLine line = lines.get(cursor.y+1);
-			cursor.down(line.length);
+		if (!caretOverride){
+			if (cursor.y < lines.size()-1){
+				P4TextLine line = lines.get(cursor.y+1);
+				cursor.down(line.length);
+			}
 		}
 	}
 
 	public void cursorRight(){
-		P4TextLine line = lines.get(cursor.y);
-		if (cursor.y < lines.size()-1){
-			cursor.right(line.length);
-		} else if (cursor.x < line.length){
-			cursor.right(line.length);
+		if (!caretOverride){
+			P4TextLine line = lines.get(cursor.y);
+			if (cursor.y < lines.size()-1){
+				cursor.right(line.length);
+			} else if (cursor.x < line.length){
+				cursor.right(line.length);
+			}
 		}
 	}
 
 	public void cursorLeft(){
-		if (cursor.y > 0){
-			P4TextLine line = lines.get(cursor.y-1);
-			cursor.left(line.length);
-		} else {
-			cursor.left(0);
+		if (!caretOverride){
+			if (cursor.y > 0){
+				P4TextLine line = lines.get(cursor.y-1);
+				cursor.left(line.length);
+			} else {
+				cursor.left(0);
+			}
 		}
 	}
 }

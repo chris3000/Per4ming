@@ -4,6 +4,7 @@ import com.chris3000.p4ming.P4Ming
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.Frame
+import java.awt.Point
 import java.awt.event.ActionListener
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
@@ -36,6 +37,24 @@ public class P4Viewer extends WindowAdapter{
 		}
 	}
 
+	public void keyPressed(char c){
+		if (p4a != null){
+			p4a.p4KeyPressed(c);
+		}
+	}
+	
+	public void caretEvent(Point dot, Point mark){
+		if (p4a != null){
+			p4a.caretEvent(dot, mark);
+		}
+	}
+	
+	public void caretEvent(Point dot){
+		if (p4a != null){
+			p4a.caretEvent(dot);
+		}
+	}
+	
 	public void start(int w, int h){
 		p4aFrame = new Frame("P4M"); // create Frame
 		int[] winLoc = getCenterScreen(w,h);
@@ -50,6 +69,17 @@ public class P4Viewer extends WindowAdapter{
 		p4aFrame.add(p4a, BorderLayout.CENTER);
 		p4aFrame.setVisible(true);
 		p4a.init();
+		while (!p4a.isInit()){
+			sleep(500);
+		}
+		p4m.getCurrentText();
+		
+	}
+	
+	public void setText(String text){
+		if (p4a != null){
+			p4a.setText(text);
+		}
 	}
 	
 	private int[] getCenterScreen(int w, int h){
