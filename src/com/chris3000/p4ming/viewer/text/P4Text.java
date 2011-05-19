@@ -48,6 +48,11 @@ public class P4Text {
 	private float bgAlpha = 128;
 	private boolean cursorEnabled = true;
 	private boolean showFramerate = true;
+	
+	/**Are there any error messages?*/
+	private boolean showErrorMessage = false;
+	private String errorMessage = "";
+	
 	public void init(){
 		lines.add(new P4TextLine());
 		maxChars = p.width/10;
@@ -91,18 +96,32 @@ public class P4Text {
 			p.text(getText(), 0, 0, 0);
 			//draw cursor
 			if (cursorEnabled && cursor.isVisible()){
-				p.fill(255,255,255,128);
+				p.fill(255,128);
 				p.noStroke();
 				p.rect(cursor.x*38, cursor.y*maxLineSpace+15, 40, -70);
 			}
 		p.popMatrix();
-		//p.text(""+currentScale,10,500);
+		if (showErrorMessage){
+			p.fill(255,128,128);
+			p.textFont(font, 14);
+			p.text(errorMessage,5,p.height-80);
+			showErrorMessage = false;//turn off.  must get reset every frame
+		}
 		if (showFramerate){
 			p.fill(255);
-			p.textFont(font, 24);
+			p.textFont(font, 14);
 			p.text(""+p.frameRate,5,p.height-30);
 		}
 	}
+	
+	public void setErrorMessage(String msg){
+		if (msg.length() > 80){
+			msg = msg.substring(0, 80)+cr+msg.substring(81, msg.length());
+		}
+		errorMessage = msg;
+		showErrorMessage = true;
+	}
+	
 	
 	public String getText(){
 		StringBuffer sb= new StringBuffer();

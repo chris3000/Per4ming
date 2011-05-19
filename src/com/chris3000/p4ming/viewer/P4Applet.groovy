@@ -8,11 +8,15 @@ import com.sun.tools.jdi.JDWP.StackFrame.ThisObject;
 
 import java.awt.Point
 import processing.core.PApplet
+import processing.core.PImage
 
 class P4Applet extends PApplet{
 	def queue = [] as LinkedList
 	//visual text
 	P4Text p4text = null;
+	boolean showText = true;
+	//error assets
+	PImage errorSign;
 	
 	int p4width = 100;
 	int p4height = 100;
@@ -25,6 +29,10 @@ class P4Applet extends PApplet{
 	public P4Applet(int w, int h){
 		p4width = w;
 		p4height = h;
+	}
+	
+	def enableText = { boolean enabled ->
+		showText = enabled;	
 	}
 	
 	synchronized void addMethod (P4Message message) {
@@ -79,7 +87,8 @@ class P4Applet extends PApplet{
 	}
 	
 	def internal_drawError = { Exception e ->
-		println("error!"+ e.toString())
+		image(errorSign, (width/2)-(errorSign.width/2), (height/2)-(errorSign.height/2));
+		p4text.setErrorMessage(e.toString());
 	}
 	
 	def evaluate = { String clos ->
@@ -119,12 +128,15 @@ class P4Applet extends PApplet{
 			}
 			
 		}
-		internal_gdraw()
-		p4text.calc();
-		p4text.render();
+		internal_gdraw();
+		if (showText){
+			p4text.calc();
+			p4text.render();
+		}
 	}
 
 	public	void setup () {
+		errorSign = loadImage("internal_assets/error_x.png");
 		gsetup()
 		initText();
 		p4aInit = true;
