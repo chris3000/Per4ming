@@ -110,7 +110,7 @@ public class P4Text {
 		if (showFramerate){
 			p.fill(255);
 			p.textFont(font, 14);
-			p.text(""+p.frameRate,5,p.height-30);
+			p.text(""+(int)(p.frameRate),5,p.height-30);
 		}
 	}
 	

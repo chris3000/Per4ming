@@ -8,6 +8,8 @@ import javax.swing.JPanel;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.KeyStroke;
+
 import java.awt.GridBagLayout;
 import javax.swing.BorderFactory;
 import javax.swing.border.EtchedBorder;
@@ -28,8 +30,12 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.Font;
 import java.awt.CardLayout;
+import javax.swing.JMenuBar;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 
 public class P4Editor extends JFrame{
+	private KeyStroke ctrlEnter = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, ActionEvent.CTRL_MASK);  //  @jve:decl-index=0:
 	private boolean started = false;
 	private static final long serialVersionUID = 1L;
 	private JPanel jContentPane = null;
@@ -46,6 +52,10 @@ public class P4Editor extends JFrame{
 	P4Ming p4m;  //  @jve:decl-index=0:
 	private JTextField propertyField = null;
 	private JButton paramsSubmit = null;
+	private JMenuBar jmenuBar = null;
+	private JMenu File = null;
+	private JMenu Options = null;
+	private JMenuItem submitMethod = null;
 	/**
 	 * This is the default constructor
 	 */
@@ -80,6 +90,7 @@ public class P4Editor extends JFrame{
 	 */
 	private void initialize() {
 		this.setSize(550, 400);
+		this.setJMenuBar(getJmenuBar());
 		this.setContentPane(getJContentPane());
 		this.setTitle("P4Ming Editor");
 	}
@@ -154,7 +165,9 @@ public class P4Editor extends JFrame{
 			editorTextArea.addKeyListener(new KeyListener(){
 				@Override
 				public void keyPressed(KeyEvent e) {
-					p4m.keyPressed(e.getKeyChar());
+					if(!e.isControlDown() && !e.isMetaDown() && !e.isAltDown()){
+						p4m.keyPressed(e.getKeyChar());
+					}
 					
 				}
 
@@ -288,10 +301,7 @@ public void getCurrentText(){
 		}
 		submitButton.addActionListener(new ActionListener() {
         	public void actionPerformed(ActionEvent e) {
-        		if (started){
-        			P4Message p4mess = new P4Message("draw1", editorTextArea.getText(), P4Message.METHOD);
-        			p4m.addMethod(p4mess);
-        		}
+        		submitMethod();
         	}
         });
 		return submitButton;
@@ -339,6 +349,75 @@ public void getCurrentText(){
 			String text = propertyField.getText();
 			String[] nameValue = text.split("=");
 			P4Message p4mess = new P4Message(nameValue[0].trim(), nameValue[1].trim(), P4Message.PROPERTY);
+			p4m.addMethod(p4mess);
+		}
+	}
+
+	/**
+	 * This method initializes jmenuBar	
+	 * 	
+	 * @return javax.swing.JMenuBar	
+	 */
+	private JMenuBar getJmenuBar() {
+		if (jmenuBar == null) {
+			jmenuBar = new JMenuBar();
+			jmenuBar.add(getFile());
+			jmenuBar.add(getOptions());
+		}
+		return jmenuBar;
+	}
+
+	/**
+	 * This method initializes File	
+	 * 	
+	 * @return javax.swing.JMenu	
+	 */
+	private JMenu getFile() {
+		if (File == null) {
+			File = new JMenu();
+			File.setName("File");
+			File.setText("File");
+		}
+		return File;
+	}
+
+	/**
+	 * This method initializes Options	
+	 * 	
+	 * @return javax.swing.JMenu	
+	 */
+	private JMenu getOptions() {
+		if (Options == null) {
+			Options = new JMenu();
+			Options.setText("Options");
+			Options.add(getSubmitMethod());
+		}
+		return Options;
+	}
+
+	/**
+	 * This method initializes submitMethod	
+	 * 	
+	 * @return javax.swing.JMenuItem	
+	 */
+	private JMenuItem getSubmitMethod() {
+		if (submitMethod == null) {
+			submitMethod = new JMenuItem();
+			submitMethod.setText("Submit Method");
+			submitMethod.setAccelerator(ctrlEnter);
+			submitMethod.addActionListener(new java.awt.event.ActionListener() {
+				public void actionPerformed(java.awt.event.ActionEvent e) {
+					submitMethod();
+					System.out.println("actionPerformed()"); // TODO Auto-generated Event stub actionPerformed()
+				}
+			});
+		}
+		return submitMethod;
+	}
+
+	private void submitMethod() {
+		if (started){
+			P4Message p4mess = new P4Message("draw1", editorTextArea.getText(), P4Message.METHOD);
 			p4m.addMethod(p4mess);
 		}
 	}
