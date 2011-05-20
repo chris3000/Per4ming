@@ -27,6 +27,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.Font;
+import java.awt.CardLayout;
 
 public class P4Editor extends JFrame{
 	private boolean started = false;
@@ -43,6 +44,8 @@ public class P4Editor extends JFrame{
 	private JButton submitButton = null;
 	//parent class
 	P4Ming p4m;  //  @jve:decl-index=0:
+	private JTextField propertyField = null;
+	private JButton paramsSubmit = null;
 	/**
 	 * This is the default constructor
 	 */
@@ -183,6 +186,15 @@ public void getCurrentText(){
 	 */
 	private JPanel getControlPanel() {
 		if (controlPanel == null) {
+			GridBagConstraints gridBagConstraints3 = new GridBagConstraints();
+			gridBagConstraints3.gridx = 5;
+			gridBagConstraints3.gridy = 1;
+			GridBagConstraints gridBagConstraints2 = new GridBagConstraints();
+			gridBagConstraints2.fill = GridBagConstraints.VERTICAL;
+			gridBagConstraints2.gridy = 1;
+			gridBagConstraints2.weightx = 1.0;
+			gridBagConstraints2.gridwidth = 5;
+			gridBagConstraints2.gridx = 0;
 			GridBagConstraints gridBagConstraints1 = new GridBagConstraints();
 			gridBagConstraints1.fill = GridBagConstraints.VERTICAL;
 			gridBagConstraints1.weightx = 1;
@@ -201,6 +213,8 @@ public void getCurrentText(){
 			controlPanel.add(getHeightField(), gridBagConstraints1);
 			controlPanel.add(getStartStopButton(), new GridBagConstraints());
 			controlPanel.add(getSubmitButton(), new GridBagConstraints());
+			controlPanel.add(getParamsField(), gridBagConstraints2);
+			controlPanel.add(getParamsSubmit(), gridBagConstraints3);
 		}
 		return controlPanel;
 	}
@@ -281,6 +295,52 @@ public void getCurrentText(){
         	}
         });
 		return submitButton;
+	}
+
+	/**
+	 * This method initializes paramsField	
+	 * 	
+	 * @return javax.swing.JTextField	
+	 */
+	private JTextField getParamsField() {
+		if (propertyField == null) {
+			propertyField = new JTextField();
+			propertyField.setName("propertyField");
+			propertyField.setPreferredSize(new Dimension(450, 28));
+			propertyField.addActionListener(new ActionListener(){
+					public void actionPerformed(ActionEvent evt) {
+		        		submitProperty();
+					}
+		});
+		}
+		return propertyField;
+	}
+
+	/**
+	 * This method initializes paramsSubmit	
+	 * 	
+	 * @return javax.swing.JButton	
+	 */
+	private JButton getParamsSubmit() {
+		if (paramsSubmit == null) {
+			paramsSubmit = new JButton();
+			paramsSubmit.setText("Property");
+			paramsSubmit.addActionListener(new ActionListener() {
+	        	public void actionPerformed(ActionEvent e) {
+	        		submitProperty();
+	        	}
+	        });
+		}
+		return paramsSubmit;
+	}
+
+	private void submitProperty() {
+		if (started){
+			String text = propertyField.getText();
+			String[] nameValue = text.split("=");
+			P4Message p4mess = new P4Message(nameValue[0].trim(), nameValue[1].trim(), P4Message.PROPERTY);
+			p4m.addMethod(p4mess);
+		}
 	}
 
 }

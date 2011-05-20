@@ -12,6 +12,9 @@ import processing.core.PImage
 
 class P4Applet extends PApplet{
 	def queue = [] as LinkedList
+	//holder for added properties.  Kind of a hack?  rather use metaclass.
+	private def internal_properties = Collections.synchronizedMap([:])
+	P4Applet p = null;
 	//visual text
 	P4Text p4text = null;
 	boolean showText = true;
@@ -98,12 +101,24 @@ class P4Applet extends PApplet{
 		return received;
 	}
 
+	def paramEvaluate = { String clos ->
+		GroovyShell shell = new GroovyShell();
+		def received = shell.evaluate("{->${clos}}");
+		received.delegate=this;
+		return received.call()
+	}
+	
 	def makeMethod = {String name, String content ->
 		this.metaClass."${name}" = evaluate(content)
 		println(content)
-		//delegate.setMetaClass(emc);
 	}
 
+	def makeProperty = {name, value ->
+		this."${name}" = paramEvaluate(value);
+		println(name+"="+value);
+	}
+
+	
 	def p4KeyPressed = { char c ->
 		p4text.add(c);
 	}
@@ -114,6 +129,7 @@ class P4Applet extends PApplet{
 	public void caretEvent(Point dot, Point mark){
 		//determine cursor location
 	}
+	
 	public void draw () {
 		//println(queue.size())
 		if (!queue.isEmpty()){
@@ -123,6 +139,7 @@ class P4Applet extends PApplet{
 			//println(""+type+": "+internal_message.getTypeString());
 			switch(internal_message.type){
 				case P4Message.METHOD: makeMethod(internal_message.name, internal_message.value); break;
+				case P4Message.PROPERTY: makeProperty(internal_message.name, internal_message.value); break;
 				//default: makeMethod(internal_message.name, internal_message.value); break;
 				
 			}
@@ -135,10 +152,19 @@ class P4Applet extends PApplet{
 		}
 	}
 
+	def propertyMissing(String internal_name, internal_value)  { 
+		internal_properties[internal_name] = internal_value
+	}
+	
+		def propertyMissing(String internal_name) { 
+			internal_properties[internal_name]
+		}
+	
 	public	void setup () {
 		errorSign = loadImage("internal_assets/error_x.png");
 		gsetup()
 		initText();
+		p=this;
 		p4aInit = true;
 	}
 }

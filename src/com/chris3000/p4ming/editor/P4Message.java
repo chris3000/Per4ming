@@ -5,7 +5,7 @@ import java.io.Serializable;
 public class P4Message implements Serializable{
 	public String name;
 	public static final byte METHOD = 10;
-	public static final byte PARAMETER = 20;
+	public static final byte PROPERTY = 20;
 	public static final byte CLASS = 30;
 	public static final byte UNKNOWN = 99;
 	public byte type = UNKNOWN;
@@ -21,7 +21,7 @@ public class P4Message implements Serializable{
 		String typeStr = null;
 		switch(type){
 		case METHOD: typeStr = "METHOD";break;
-		case PARAMETER: typeStr = "PARAMETER";break;
+		case PROPERTY: typeStr = "PARAMETER";break;
 		case CLASS: typeStr = "CLASS";break;
 		default: typeStr = "UNKNOWN";break;
 		}
