@@ -7,6 +7,7 @@ public class P4Message implements Serializable{
 	public static final byte METHOD = 10;
 	public static final byte PROPERTY = 20;
 	public static final byte CLASS = 30;
+	public static final byte RUN_ONCE = 40;
 	public static final byte UNKNOWN = 99;
 	public byte type = UNKNOWN;
 	public Object value;
@@ -23,6 +24,7 @@ public class P4Message implements Serializable{
 		case METHOD: typeStr = "METHOD";break;
 		case PROPERTY: typeStr = "PARAMETER";break;
 		case CLASS: typeStr = "CLASS";break;
+		case RUN_ONCE: typeStr = "RUN_ONCE";break;
 		default: typeStr = "UNKNOWN";break;
 		}
 		return typeStr;

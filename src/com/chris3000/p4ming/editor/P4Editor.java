@@ -352,8 +352,13 @@ public void getCurrentText(){
 		if (started){
 			String text = propertyField.getText();
 			String[] nameValue = text.split("=");
-			P4Message p4mess = new P4Message(nameValue[0].trim(), nameValue[1].trim(), P4Message.PROPERTY);
-			p4m.addMethod(p4mess);
+			if(nameValue.length == 2){
+				P4Message p4mess = new P4Message(nameValue[0].trim(), nameValue[1].trim(), P4Message.PROPERTY);
+				p4m.addMethod(p4mess);
+			} else if (nameValue.length == 1){
+				P4Message p4mess = new P4Message(null, nameValue[0].trim(), P4Message.RUN_ONCE);
+				p4m.addMethod(p4mess);
+			}
 		}
 	}
 

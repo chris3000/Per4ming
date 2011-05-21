@@ -101,7 +101,7 @@ class P4Applet extends PApplet{
 		return received;
 	}
 
-	def paramEvaluate = { String clos ->
+	def propEvaluate = { String clos ->
 		GroovyShell shell = new GroovyShell();
 		def received = shell.evaluate("{->${clos}}");
 		received.delegate=this;
@@ -114,10 +114,16 @@ class P4Applet extends PApplet{
 	}
 
 	def makeProperty = {name, value ->
-		this."${name}" = paramEvaluate(value);
+		this."${name}" = propEvaluate(value);
 		println(name+"="+value);
 	}
 
+	def runOnce = {value ->
+		GroovyShell shell = new GroovyShell();
+		def received = shell.evaluate("{->${value}}");
+		received.delegate=this;
+		received.call()
+	}
 	
 	def p4KeyPressed = { char c ->
 		p4text.add(c);
@@ -143,6 +149,7 @@ class P4Applet extends PApplet{
 			switch(internal_message.type){
 				case P4Message.METHOD: makeMethod(internal_message.name, internal_message.value); break;
 				case P4Message.PROPERTY: makeProperty(internal_message.name, internal_message.value); break;
+				case P4Message.RUN_ONCE: runOnce(internal_message.value); break;
 				//default: makeMethod(internal_message.name, internal_message.value); break;
 				
 			}
