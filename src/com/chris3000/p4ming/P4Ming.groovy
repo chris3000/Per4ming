@@ -8,7 +8,7 @@ import java.awt.Point
 class P4Ming {
 	P4Editor p4e = null;
 	P4Viewer p4v = null;
-	//GroovyShell shell = new GroovyShell();
+
 	public void startViewer(int width, int height){
 		if (p4v == null){
 			p4v = new P4Viewer(this);
@@ -36,7 +36,6 @@ class P4Ming {
 	
 	public void addMethod(P4Message message){
 		if (p4v != null){
-			//def eval = evaluate(closure);
 			p4v.addMethod(message);
 		}
 	}
@@ -64,6 +63,8 @@ class P4Ming {
 		p4v.setText(text);
 	}
 	public static void main(String[] args){
+		//put menu bar at top of screen and not on the app.
+		System.setProperty ("apple.laf.useScreenMenuBar", "true");
 		P4Ming p4m = new P4Ming();
 		p4m.start();
 	}

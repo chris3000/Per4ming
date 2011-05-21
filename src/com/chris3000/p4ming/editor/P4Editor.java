@@ -133,7 +133,10 @@ public class P4Editor extends JFrame{
 		if (editorTextArea == null) {
 			editorTextArea = new JTextArea();
 			editorTextArea.setMargin(new Insets(2,6,2,6));
-			editorTextArea.setText("{->ellipse(200,200,random(20),random(10));}");
+			editorTextArea.setText("{->\n" +
+					"\t//code goes here\n" +
+					"\t//ellipse(200,200,random(20),random(10));\n" +
+					"}");
 			editorTextArea.setFont(new Font("Monaco", Font.PLAIN, 12));
 			editorTextArea.setTabSize(3);
 			editorTextArea.setWrapStyleWord(true);
@@ -142,13 +145,14 @@ public class P4Editor extends JFrame{
     	  try {
     	  int dot = caretEvent.getDot();
     	  int mark = caretEvent.getMark();
+    	  System.out.println(""+dot+","+mark);
     	  Point dotLoc = new Point();
     	  dotLoc.y = editorTextArea.getLineOfOffset(dot);
     	  dotLoc.x = dot-editorTextArea.getLineStartOffset(dotLoc.y);
     	  if(mark != dot){ //selection
         	  Point markLoc = new Point();
-        	  markLoc.y = editorTextArea.getLineOfOffset(dot);
-        	  markLoc.x = dot-editorTextArea.getLineStartOffset(dotLoc.y);
+        	  markLoc.y = editorTextArea.getLineOfOffset(mark);
+        	  markLoc.x = mark-editorTextArea.getLineStartOffset(markLoc.y);
     		  p4m.caretEvent(dotLoc,markLoc);
     	  } else { 
     		  p4m.caretEvent(dotLoc);

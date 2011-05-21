@@ -1,5 +1,7 @@
 package com.chris3000.p4ming.viewer.text;
 
+import java.awt.Point;
+
 public class P4Cursor {
 	public int x = 0;
 	public int y = 0;
@@ -7,10 +9,45 @@ public class P4Cursor {
 	private boolean cursorVisible = true;
 	private long blinkRate = 750;
 	private long lastBlink = System.currentTimeMillis();
-	
+	/**selection stuff*/
+	private boolean selected = false;  //are we selected?
+	private Point dot= null;
+	private Point mark = null;
 	
 	public void setBlinkRate(long millis){
 		blinkRate = millis;
+	}
+	
+	public void selectOn(Point _dot, Point _mark){
+		selected = true;
+		dot = _dot;
+		mark = _mark;
+	}
+	
+	public void selectOff(){
+		selected = false;
+	}
+	
+	public boolean isSelected(){
+		return selected;
+	}
+	
+	public Point[] getSelectRange(){
+		Point[] points = new Point[2];
+		boolean dotMark=true;
+		if (dot.y > mark.y){
+			dotMark = false;
+		} else if (dot.y == mark.y && dot.x > mark.x){
+			dotMark=false;
+		}
+		if (dotMark){
+			points[0]=dot;
+			points[1]=mark;
+		} else {
+			points[0]=mark;
+			points[1]=dot;
+		}
+		return points;
 	}
 	
 	public void calcBlink(){

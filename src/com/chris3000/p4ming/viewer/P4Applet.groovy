@@ -41,7 +41,7 @@ class P4Applet extends PApplet{
 	synchronized void addMethod (P4Message message) {
 		println("adding message ${message.toString()}")
 		queue.add message
-		println("queue size:"+queue.size)
+		//println("queue size:"+queue.size)
 	}
 
 	def gsetup = {
@@ -125,16 +125,19 @@ class P4Applet extends PApplet{
 	
 	public void caretEvent(Point dot){
 	p4text.caretEvent(dot)
+	p4text.selectionOff();
 }
 	public void caretEvent(Point dot, Point mark){
-		//determine cursor location
+		p4text.setSelection (dot, mark);
+		println(dot.toString()+"  "+mark.toString())
 	}
 	
 	public void draw () {
 		//println(queue.size())
 		if (!queue.isEmpty()){
+			try {
 			P4Message internal_message = queue.remove()
-			println("got message ${internal_message.toString()}");
+			//println("got message ${internal_message.toString()}");
 			//byte type = internal_message.type;
 			//println(""+type+": "+internal_message.getTypeString());
 			switch(internal_message.type){
@@ -142,6 +145,10 @@ class P4Applet extends PApplet{
 				case P4Message.PROPERTY: makeProperty(internal_message.name, internal_message.value); break;
 				//default: makeMethod(internal_message.name, internal_message.value); break;
 				
+			}
+			} catch (Exception e){
+				p4text.setErrorMessage(e.toString());
+				e.printStackTrace();
 			}
 			
 		}

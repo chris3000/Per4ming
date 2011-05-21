@@ -23,7 +23,7 @@ public class P4Text {
 	/** The size we should eventually be set to.*/
 	float targetScale = 1;
 	/** How fast to scale the text*/
-	float scaleVel = 0.07f;
+	float scaleVel = 0.12f;
 	/**The font.  Monaco by default*/
 	PFont font;
 	/** Smallest size */
@@ -48,6 +48,7 @@ public class P4Text {
 	private float bgAlpha = 128;
 	private boolean cursorEnabled = true;
 	private boolean showFramerate = true;
+	
 	
 	/**Are there any error messages?*/
 	private boolean showErrorMessage = false;
@@ -95,10 +96,33 @@ public class P4Text {
 			p.scale(currentScale);
 			p.text(getText(), 0, 0, 0);
 			//draw cursor
-			if (cursorEnabled && cursor.isVisible()){
+			if (cursorEnabled){
 				p.fill(255,128);
 				p.noStroke();
+				if (cursor.isVisible()){
 				p.rect(cursor.x*38, cursor.y*maxLineSpace+15, 40, -70);
+				}
+				if(cursor.isSelected()){
+					Point[] range = cursor.getSelectRange();
+					Point begin = range[0];
+					Point end = range[1];
+					if (begin.y == end.y){//just one line
+						p.rect(begin.x*38, begin.y*maxLineSpace+15, (end.x-begin.x)*38, -70);
+					} else { //multiple lines
+						for (int i = begin.y; i <= end.y; i++) {
+							P4TextLine line = lines.get(i);
+							int length = line.length+1;
+							if (i==begin.y){
+								p.rect(begin.x*38, begin.y*maxLineSpace+15, (length-begin.x)*38, -70);
+							} else if (i == end.y){
+								p.rect(0, end.y*maxLineSpace+15, end.x*38, -70);
+							} else {//whole line
+								p.rect(0, i*maxLineSpace+15, length*38, -70);
+							}
+						}
+					}
+					//p.println("selected!");
+				}
 			}
 		p.popMatrix();
 		if (showErrorMessage){
@@ -112,6 +136,14 @@ public class P4Text {
 			p.textFont(font, 14);
 			p.text(""+(int)(p.frameRate),5,p.height-30);
 		}
+	}
+	
+	public void setSelection(Point dot, Point mark){
+		cursor.selectOn(dot, mark);
+	}
+	
+	public void selectionOff(){
+		cursor.selectOff();
 	}
 	
 	public void setErrorMessage(String msg){
