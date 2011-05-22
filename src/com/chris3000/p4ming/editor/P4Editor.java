@@ -20,6 +20,8 @@ import javax.swing.JTextField;
 import java.awt.event.KeyListener;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 
 import com.chris3000.p4ming.P4Ming;
@@ -63,7 +65,7 @@ public class P4Editor extends JFrame{
 		super();
 		initialize();
 	}
-	
+
 	public void setParent(P4Ming _p4m){
 		p4m= _p4m;
 	}
@@ -71,18 +73,18 @@ public class P4Editor extends JFrame{
 		startStopButton.setText("Start");
 		started = false;
 	}
-	
+
 	public void setStart(){
 		startStopButton.setText("Stop");
 		started = true;
 	}
-	
-/*	public P4Editor(P4Ming _p4m) {
+
+	/*	public P4Editor(P4Ming _p4m) {
 		super();
 		p4m = _p4m;
 		initialize();
 	}*/
-	
+
 	/**
 	 * This method initializes this
 	 * 
@@ -136,65 +138,100 @@ public class P4Editor extends JFrame{
 			editorTextArea.setText("{->\n" +
 					"\t//code goes here\n" +
 					"\t//ellipse(200,200,random(20),random(10));\n" +
-					"}");
+			"}");
 			editorTextArea.setFont(new Font("Monaco", Font.PLAIN, 12));
 			editorTextArea.setTabSize(3);
 			editorTextArea.setWrapStyleWord(true);
 			editorTextArea.addCaretListener(new CaretListener() {
-      public void caretUpdate(CaretEvent caretEvent) {
-    	  try {
-    	  int dot = caretEvent.getDot();
-    	  int mark = caretEvent.getMark();
-    	  System.out.println(""+dot+","+mark);
-    	  Point dotLoc = new Point();
-    	  dotLoc.y = editorTextArea.getLineOfOffset(dot);
-    	  dotLoc.x = dot-editorTextArea.getLineStartOffset(dotLoc.y);
-    	  if(mark != dot){ //selection
-        	  Point markLoc = new Point();
-        	  markLoc.y = editorTextArea.getLineOfOffset(mark);
-        	  markLoc.x = mark-editorTextArea.getLineStartOffset(markLoc.y);
-    		  p4m.caretEvent(dotLoc,markLoc);
-    	  } else { 
-    		  p4m.caretEvent(dotLoc);
-    	  }
-		} catch (BadLocationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+				public void caretUpdate(CaretEvent caretEvent) {
+						int dot = caretEvent.getDot();
+						int mark = caretEvent.getMark();
+						System.out.println(""+dot+","+mark);
+						Point dotLoc = getDocXYLoc(editorTextArea,dot);
+						if(mark != dot){ //selection
+							Point markLoc = getDocXYLoc(editorTextArea,mark);
+							p4m.caretEvent(dotLoc,markLoc);
+						} else { 
+							p4m.caretEvent(dotLoc);
+						}
+					
+					// System.out.println("Dot: "+ caretEvent.getDot()+" Mark: "+caretEvent.getMark());
 
-       // System.out.println("Dot: "+ caretEvent.getDot()+" Mark: "+caretEvent.getMark());
-        
-      }
-    });
+				}
+			});
 			editorTextArea.addKeyListener(new KeyListener(){
 				@Override
 				public void keyPressed(KeyEvent e) {
-					if(!e.isControlDown() && !e.isMetaDown() && !e.isAltDown()){
-						p4m.keyPressed(e.getKeyChar());
-					}
-					
+/*					char key = e.getKeyChar();
+					if (key >= ' ' || key =='\n'){  //space is the first visible char
+						if(!e.isControlDown() && !e.isMetaDown() && !e.isAltDown()){
+							p4m.keyPressed(e.getKeyChar());
+						}
+					}*/
 				}
 
 				@Override
 				public void keyReleased(KeyEvent e) {
 					// TODO Auto-generated method stub
-					
+
 				}
 
 				@Override
 				public void keyTyped(KeyEvent e) {
 					// TODO Auto-generated method stub
-					
+
 				}
+			});
+			editorTextArea.getDocument().addDocumentListener(new DocumentListener(){
+
+				@Override
+				public void changedUpdate(DocumentEvent e) {
+					System.out.println("doc change!"+e.toString());
+					System.out.println("length="+e.getLength()+", offset="+e.getOffset()+", type="+e.getType());
+				}
+
+				@Override
+				public void insertUpdate(DocumentEvent e) {
+					System.out.println("doc insert!"+e.toString());
+					System.out.println("length="+e.getLength()+", offset="+e.getOffset()+", type="+e.getType());
+					String changedText = null;
+					try {
+						changedText = e.getDocument().getText(e.getOffset(), e.getLength());
+					} catch (BadLocationException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+					Point addLoc = getDocXYLoc(editorTextArea,e.getOffset());
+					p4m.addText(addLoc, changedText);
+				}
+
+				@Override
+				public void removeUpdate(DocumentEvent e) {
+					//System.out.println("length="+e.getLength()+", offset="+e.getOffset()+", type="+e.getType());
+					Point removeLoc = getDocXYLoc(editorTextArea,e.getOffset());
+					p4m.removeText(removeLoc,e.getLength());
+				}	
 			});
 		}
 		return editorTextArea;
 	}
 
-public void getCurrentText(){
-	p4m.setText(editorTextArea.getText());
-}
-		
+	public Point getDocXYLoc(JTextArea textArea, int offset){
+		Point loc = new Point();
+		try {
+			loc.y = textArea.getLineOfOffset(offset);
+			loc.x = offset-textArea.getLineStartOffset(loc.y);
+		} catch (BadLocationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return loc;
+	}
+	
+	public void getCurrentText(){
+		p4m.setText(editorTextArea.getText());
+	}
+
 
 	/**
 	 * This method initializes controlPanel	
@@ -247,21 +284,21 @@ public void getCurrentText(){
 			startStopButton.setText("Start");
 		}
 		startStopButton.addActionListener(new ActionListener() {
-        	public void actionPerformed(ActionEvent e) {
-        		if (!started){
-        			startStopButton.setText("Stop");
-        			int w = Integer.parseInt(widthField.getText());
-        			int h = Integer.parseInt(heightField.getText());
-        			p4m.startViewer(w, h);
-        			started = true;
-        		} else {
-        			startStopButton.setText("Start");
-        			started = false;
-        			p4m.editorStop();
-        		}
-        		//jtfInput.setText("Button 2!");
-        	}
-        });
+			public void actionPerformed(ActionEvent e) {
+				if (!started){
+					startStopButton.setText("Stop");
+					int w = Integer.parseInt(widthField.getText());
+					int h = Integer.parseInt(heightField.getText());
+					p4m.startViewer(w, h);
+					started = true;
+				} else {
+					startStopButton.setText("Start");
+					started = false;
+					p4m.editorStop();
+				}
+				//jtfInput.setText("Button 2!");
+			}
+		});
 		return startStopButton;
 	}
 
@@ -304,10 +341,10 @@ public void getCurrentText(){
 			submitButton.setText("Submit");
 		}
 		submitButton.addActionListener(new ActionListener() {
-        	public void actionPerformed(ActionEvent e) {
-        		submitMethod();
-        	}
-        });
+			public void actionPerformed(ActionEvent e) {
+				submitMethod();
+			}
+		});
 		return submitButton;
 	}
 
@@ -322,10 +359,10 @@ public void getCurrentText(){
 			propertyField.setName("propertyField");
 			propertyField.setPreferredSize(new Dimension(450, 28));
 			propertyField.addActionListener(new ActionListener(){
-					public void actionPerformed(ActionEvent evt) {
-		        		submitProperty();
-					}
-		});
+				public void actionPerformed(ActionEvent evt) {
+					submitProperty();
+				}
+			});
 		}
 		return propertyField;
 	}
@@ -340,10 +377,10 @@ public void getCurrentText(){
 			paramsSubmit = new JButton();
 			paramsSubmit.setText("Property");
 			paramsSubmit.addActionListener(new ActionListener() {
-	        	public void actionPerformed(ActionEvent e) {
-	        		submitProperty();
-	        	}
-	        });
+				public void actionPerformed(ActionEvent e) {
+					submitProperty();
+				}
+			});
 		}
 		return paramsSubmit;
 	}

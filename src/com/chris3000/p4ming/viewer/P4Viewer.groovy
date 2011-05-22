@@ -43,6 +43,18 @@ public class P4Viewer extends WindowAdapter{
 		}
 	}
 	
+	public void removeText(Point fromLoc,int amount){
+		if (p4a != null){
+			p4a.removeText(fromLoc, amount);
+		}
+	}
+
+	public void addText(Point atLoc,String text){
+		if (p4a != null){
+			p4a.addText(atLoc, text);
+		}
+	}
+	
 	public void caretEvent(Point dot, Point mark){
 		if (p4a != null){
 			p4a.caretEvent(dot, mark);

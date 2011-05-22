@@ -2,6 +2,8 @@ package com.chris3000.p4ming.viewer.text;
 
 import java.awt.Point;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import processing.core.PApplet;
 import processing.core.PFont;
@@ -39,7 +41,8 @@ public class P4Text {
 
 	int leftPadding = 10; //space from left screen, in pixels.
 	/**Holds line data*/
-	ArrayList<P4TextLine> lines = new ArrayList<P4TextLine>();
+
+	List<P4TextLine> lines = Collections.synchronizedList(new ArrayList<P4TextLine>());
 	/** Holds cursor location data */
 	P4Cursor cursor = new P4Cursor();
 	/** should be true if an external editor is sending caret data */
@@ -84,7 +87,7 @@ public class P4Text {
 		}
 	}
 	
-	public void render(){
+	public synchronized void render(){
 		p.frustum(p.width*-1, p.width, p.height*-1, p.height, 1038, 0);
 		p.fill(0,bgAlpha);
 		p.rect(0,0,p.width, p.height);
@@ -180,6 +183,70 @@ public class P4Text {
 		
 	}
 	
+	public void removeText(Point fromLoc,int amount){
+		P4TextLine line = lines.get(fromLoc.y);
+		System.out.println("deleted "+fromLoc.x+", "+fromLoc.y+": "+amount);
+		//is it just from this line?
+		if (line.length-fromLoc.x >= amount){
+			line.delete(fromLoc.x, fromLoc.x+amount);
+		} else {//more than 1 line
+			System.out.println("deleted "+fromLoc.x+", "+fromLoc.y+": "+amount);
+			//first line
+			amount = amount - (line.length-fromLoc.x)-1;//reduce amount
+			if (amount>0){//we're not at the end of the first line
+				line.delete(fromLoc.x, line.length);				
+			} else {//were deleting the cr from the top of the line
+				P4TextLine nextLine = lines.remove(fromLoc.y+1);
+				line.add(nextLine.toString());
+			}
+			while (amount > 0){
+				P4TextLine nextLine = lines.remove(fromLoc.y+1);
+				System.out.println("amount="+amount+", nextLine.length="+nextLine.length);
+				if (amount < nextLine.length){
+					nextLine.delete(0, amount);
+					line.add(nextLine.toString());
+				}
+				amount = amount - nextLine.length-1;
+			}
+		}
+		calcTargetScale();
+	}
+
+	public void addText(Point atLoc,String text){
+		String[] newLines = text.split(crStr);
+		if (newLines.length==0){
+			if (text.equals(crStr)){//cr only
+				System.out.println("CR!");
+				P4TextLine line = lines.get(cursor.y);
+				//get the remainder of chars, if any
+				String remainder = line.remove(cursor.x, line.length);
+				lines.add(cursor.y+1, new P4TextLine(remainder));
+				//cursor.down(0);
+			}
+		}
+		for (int i = 0; i < newLines.length; i++) {
+			String thisLine = newLines[i];
+			p.println("This line="+thisLine);
+			if (!thisLine.isEmpty()){
+				if(atLoc.y+i==lines.size()){
+					lines.add(new P4TextLine());
+				}
+				P4TextLine line = lines.get(atLoc.y+i);
+			if(i==0){ //firstline
+				line.add(thisLine, atLoc.x);
+			} else if (i == newLines.length-1){ //last line
+				line.add(thisLine, 0);
+			} else { // middle line
+				lines.add(new P4TextLine(thisLine));
+			}
+			} else { //just cr
+				lines.add(new P4TextLine());
+			}
+		}
+		calcTargetScale();
+		cursor.blinkOn();
+	}
+	
 	/** add new character, delete character, make new line, or move cursor */
 	public void add(char key){
 		if(key == p.CODED) { 
@@ -199,6 +266,7 @@ public class P4Text {
 			} 
 		} else {
 			if (key == cr){
+				System.out.println("CR!");
 				P4TextLine line = lines.get(cursor.y);
 				//get the remainder of chars, if any
 				String remainder = line.remove(cursor.x, line.length);

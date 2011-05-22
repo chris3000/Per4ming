@@ -22,6 +22,18 @@ class P4Ming {
 		}
 	}
 	
+	public void removeText(Point fromLoc,int amount){
+		if (p4v != null){
+			p4v.removeText(fromLoc, amount);
+		}
+	}
+	
+	public void addText(Point atLoc,String text){
+		if (p4v != null){
+			p4v.addText(atLoc, text);
+		}
+	}
+	
 	public void caretEvent(Point dot, Point mark){
 		if (p4v != null){
 			p4v.caretEvent(dot, mark);
