@@ -12,5 +12,12 @@
 	<classpathentry kind="lib" path="lib/opengl/gluegen-rt.jar"/>
 	<classpathentry kind="lib" path="lib/opengl/jogl.jar"/>
 	<classpathentry kind="lib" path="lib/opengl/opengl.jar"/>
+	<classpathentry kind="lib" path="lib/minim/jl1.0.jar"/>
+	<classpathentry kind="lib" path="lib/minim/jsminim.jar"/>
+	<classpathentry kind="lib" path="lib/minim/minim-spi.jar"/>
+	<classpathentry kind="lib" path="lib/minim/minim.jar"/>
+	<classpathentry kind="lib" path="lib/minim/mp3spi1.9.4.jar"/>
+	<classpathentry kind="lib" path="lib/minim/tritonus_aos.jar"/>
+	<classpathentry kind="lib" path="lib/minim/tritonus_share.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

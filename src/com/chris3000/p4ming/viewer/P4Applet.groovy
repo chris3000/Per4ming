@@ -2,6 +2,9 @@ package com.chris3000.p4ming.viewer
 
 import com.chris3000.p4ming.editor.P4Message
 import com.chris3000.p4ming.viewer.text.P4Text;
+
+import ddf.minim.AudioInput;
+import ddf.minim.Minim;
 //wtf are these?
 //import com.sun.corba.se.impl.protocol.giopmsgheaders.Message;
 //import com.sun.org.apache.bcel.internal.generic.RETURN;
@@ -16,6 +19,9 @@ class P4Applet extends PApplet{
 	//holder for added properties.  Kind of a hack?  rather use metaclass.
 	private def internal_properties = Collections.synchronizedMap([:])
 	P4Applet p = null;
+	//audio
+	Minim minim;
+	AudioInput aud;
 	//visual text
 	P4Text p4text = null;
 	boolean showText = true;

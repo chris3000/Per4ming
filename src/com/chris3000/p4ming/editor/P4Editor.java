@@ -182,6 +182,12 @@ public class P4Editor extends JFrame{
 
 				}
 			});
+			editorTextArea.addFocusListener(new java.awt.event.FocusAdapter() {
+				public void focusGained(java.awt.event.FocusEvent e) {
+					//System.out.println("focusGained()"); // TODO Auto-generated Event stub focusGained()
+					getCurrentText();
+				}
+			});
 			editorTextArea.getDocument().addDocumentListener(new DocumentListener(){
 
 				@Override
