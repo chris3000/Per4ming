@@ -15,6 +15,8 @@ import processing.core.PApplet
 import processing.core.PImage
 
 class P4Applet extends PApplet{
+	Binding binding = new Binding([:]);
+	GroovyShell shell = new GroovyShell(binding);
 	def queue = [] as LinkedList
 	//holder for added properties.  Kind of a hack?  rather use metaclass.
 	private def internal_properties = Collections.synchronizedMap([:])
@@ -102,15 +104,15 @@ class P4Applet extends PApplet{
 	}
 
 	def evaluate = { String clos ->
-		GroovyShell shell = new GroovyShell();
+		//GroovyShell shell = new GroovyShell();
 		Closure received = shell.evaluate(clos)
 		received.delegate=this;
 		return received;
 	}
 
 	def propEvaluate = { String clos ->
-		GroovyShell shell = new GroovyShell();
-		def received = shell.evaluate("{->${clos}}");
+		//GroovyShell shell = new GroovyShell();
+		Closure received = shell.evaluate("{->${clos}}");
 		received.delegate=this;
 		return received.call()
 	}
@@ -126,8 +128,8 @@ class P4Applet extends PApplet{
 	}
 
 	def runOnce = {value ->
-		GroovyShell shell = new GroovyShell();
-		def received = shell.evaluate("{->${value}}");
+		//GroovyShell shell = new GroovyShell();
+		Closure received = shell.evaluate("{->${value}}");
 		received.delegate=this;
 		received.call()
 	}
@@ -183,11 +185,13 @@ class P4Applet extends PApplet{
 	}
 
 	def propertyMissing(String internal_name, internal_value)  {
-		internal_properties[internal_name] = internal_value
+		//internal_properties[internal_name] = internal_value
+		binding.setVariable (internal_name, internal_value);
 	}
 
 	def propertyMissing(String internal_name) {
-		internal_properties[internal_name]
+		//internal_properties[internal_name]
+		return binding.getVariable (internal_name);
 	}
 
 	public	void setup () {
@@ -195,6 +199,7 @@ class P4Applet extends PApplet{
 		gsetup()
 		initText();
 		p=this;
+		//binding.setMetaClass(this.getMetaClass());
 		p4aInit = true;
 	}
 }

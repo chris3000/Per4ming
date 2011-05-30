@@ -32,9 +32,15 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.Font;
 import java.awt.CardLayout;
+import java.util.ArrayList;
+
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+
+import org.gjt.sp.jedit.Buffer;
+import org.gjt.sp.jedit.View;
+import processing.app.syntax.JEditTextArea;
 
 public class P4Editor extends JFrame{
 	private KeyStroke ctrlEnter = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, ActionEvent.CTRL_MASK);  //  @jve:decl-index=0:
@@ -134,14 +140,13 @@ public class P4Editor extends JFrame{
 	private JTextArea getEditorTextArea() {
 		if (editorTextArea == null) {
 			editorTextArea = new JTextArea();
+			//editorTextArea = new JEditTextArea(new processing.app.syntax.TextAreaDefaults());
 			editorTextArea.setMargin(new Insets(2,6,2,6));
-			editorTextArea.setText("{->\n" +
-					"\t//code goes here\n" +
-					"\t//ellipse(200,200,random(20),random(10));\n" +
-			"}");
+			editorTextArea.setText("def draw1 = {->\n\t//code goes here\n\t//ellipse(200,200,random(20),random(10));\n}");
 			editorTextArea.setFont(new Font("Monaco", Font.PLAIN, 12));
 			editorTextArea.setTabSize(3);
 			editorTextArea.setWrapStyleWord(true);
+		
 			editorTextArea.addCaretListener(new CaretListener() {
 				public void caretUpdate(CaretEvent caretEvent) {
 						int dot = caretEvent.getDot();
@@ -171,11 +176,7 @@ public class P4Editor extends JFrame{
 				}
 
 				@Override
-				public void keyReleased(KeyEvent e) {
-					// TODO Auto-generated method stub
-
-				}
-
+				public void keyReleased(KeyEvent e) {}
 				@Override
 				public void keyTyped(KeyEvent e) {
 					// TODO Auto-generated method stub
@@ -188,7 +189,7 @@ public class P4Editor extends JFrame{
 					getCurrentText();
 				}
 			});
-			editorTextArea.getDocument().addDocumentListener(new DocumentListener(){
+		editorTextArea.getDocument().addDocumentListener(new DocumentListener(){
 
 				@Override
 				public void changedUpdate(DocumentEvent e) {
@@ -348,7 +349,7 @@ public class P4Editor extends JFrame{
 		}
 		submitButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				submitMethod();
+				submitMethods(editorTextArea.getText());
 			}
 		});
 		return submitButton;
@@ -459,7 +460,7 @@ public class P4Editor extends JFrame{
 			submitMethod.setAccelerator(ctrlEnter);
 			submitMethod.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
-					submitMethod();
+					submitMethods(editorTextArea.getText());
 					System.out.println("actionPerformed()"); // TODO Auto-generated Event stub actionPerformed()
 				}
 			});
@@ -467,11 +468,45 @@ public class P4Editor extends JFrame{
 		return submitMethod;
 	}
 
-	private void submitMethod() {
+	private void submitMethods(String methods) {
 		if (started){
-			P4Message p4mess = new P4Message("draw1", editorTextArea.getText(), P4Message.METHOD);
-			p4m.addMethod(p4mess);
+			P4Message[] p4mess = parseMethods(methods);
+			p4m.addMethods(p4mess);
 		}
 	}
+		private P4Message[] parseMethods(String methods){
+			ArrayList<P4Message> p4ms = new ArrayList<P4Message>();
+			P4Message[] p4mArray = null;
+			char[] chars = methods.toCharArray();
+			int begin=0;
+			int end = 0;
+			int braceCount=0;
+			boolean inBlock=false;
+			for (int i = 0; i < chars.length; i++) {
+				if(chars[i]=='{'){
+					braceCount++;
+					if(!inBlock)begin=i;
+					inBlock=true;
+				} else if (chars[i]=='}'){
+					braceCount--;
+					if (braceCount==0){//end of block
+						end=i+1;
+						String methodStr = methods.substring(begin, end);
+						int eqIndex = methods.lastIndexOf("=", begin);
+						int defIndex = methods.lastIndexOf("def", eqIndex)+3;
+						String methodName=methods.substring(defIndex, eqIndex).trim();
+						p4ms.add(new P4Message(methodName, methodStr, P4Message.METHOD));
+						inBlock=false;
+						//System.out.println("name: "+methodName+" method: "+methodStr);
+					}
+				}
+			}
+			p4mArray = new P4Message[p4ms.size()];
+			p4ms.toArray(p4mArray);
+//			for (int i = 0; i < p4mArray.length; i++) {System.out.println(p4mArray[i].toString());}
+			return p4mArray;
+		}
 
-}
+	}
+
+

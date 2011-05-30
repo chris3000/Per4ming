@@ -19,5 +19,8 @@
 	<classpathentry kind="lib" path="lib/minim/mp3spi1.9.4.jar"/>
 	<classpathentry kind="lib" path="lib/minim/tritonus_aos.jar"/>
 	<classpathentry kind="lib" path="lib/minim/tritonus_share.jar"/>
+	<classpathentry kind="lib" path="lib/jedit/jedit.jar"/>
+	<classpathentry kind="lib" path="lib/commons/commons-configuration-1.6.jar"/>
+	<classpathentry kind="lib" path="lib/commons/commons-lang-2.6.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

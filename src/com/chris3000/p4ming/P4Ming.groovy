@@ -52,13 +52,25 @@ class P4Ming {
 		}
 	}
 	
+	public void addMethods(P4Message[] messages){
+		if (p4v != null){
+			for (int i = 0; i < messages.length; i++) {
+				p4v.addMethod(messages[i]);
+			}
+		}
+	}
+	
 	public void stopViewer(){
-		p4v = null;
-		p4e.setStop();
+		if (p4v != null){
+			p4v = null;
+			p4e.setStop();
+		}
 	}
 
 	public void editorStop(){
-		p4v.stop();
+		if (p4v != null){
+			p4v.stop();
+		}
 	}
 
 	public void start(){
@@ -72,7 +84,9 @@ class P4Ming {
 	}
 	
 	public void setText(String text){
-		p4v.setText(text);
+		if (p4v != null){
+			p4v.setText(text);
+		}
 	}
 	public static void main(String[] args){
 		//put menu bar at top of screen and not on the app.
