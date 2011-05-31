@@ -68,26 +68,45 @@ public class P4Viewer extends WindowAdapter{
 	}
 	
 	public void start(int w, int h){
+		float[] bg = new float[3];
+		int[] sz = new int[2];
+		sz[0]=w;
+		sz[1]=h;
+		start(sz,30,bg,true,false);
+		
+	}
+	
+	public void start(int[] sz, int frameRate, float[] bgColor,boolean openGL, boolean fullScreen){
+		start(sz,frameRate,bgColor, openGL, fullScreen, null, null, 0, 0f,0);
+	}
+
+	public void start(int[] sz, int frameRate, float[] bgColor,boolean openGL, boolean fullScreen,
+			String lineInName, String chanType, int bufferSize, float sampleRate, int bitDepth){
 		p4aFrame = new Frame("P4M"); // create Frame
-		int[] winLoc = getCenterScreen(w,h);
+		int[] winLoc = new int[2];
+		if (!fullScreen){
+			winLoc = getCenterScreen(sz[0],sz[1]);
+		}
 		p4aFrame.setLocation (winLoc[0], winLoc[1]);
 		//close
 		p4aFrame.addWindowListener(this);
 		// Setup Main Frame
 		p4aFrame.setLayout(new BorderLayout());
-		p4aFrame.setSize(w, h);
+		p4aFrame.setSize(sz[0], sz[1]);
 		// Add processing PApplet
-		p4a = new P4Applet((int)p4aFrame.getSize().width, (int)p4aFrame.getSize().height);
+		p4a = new P4Applet((int)p4aFrame.getSize().width, (int)p4aFrame.getSize().height, frameRate, bgColor, openGL);
 		p4aFrame.add(p4a, BorderLayout.CENTER);
 		p4aFrame.setVisible(true);
 		p4a.init();
+		if (lineInName != null && chanType != null){
+			p4a.initAudio(lineInName, chanType, bufferSize, sampleRate, bitDepth);
+		}
 		while (!p4a.isInit()){
 			sleep(500);
 		}
 		p4m.getCurrentText();
 		
 	}
-	
 	public void setText(String text){
 		if (p4a != null){
 			p4a.setText(text);

@@ -17,13 +17,19 @@ import processing.core.PImage
 class P4Applet extends PApplet{
 	Binding binding = new Binding([:]);
 	GroovyShell shell = new GroovyShell(binding);
-	def queue = [] as LinkedList
+	def queue = [] as LinkedList;
 	//holder for added properties.  Kind of a hack?  rather use metaclass.
-	private def internal_properties = Collections.synchronizedMap([:])
+	private def internal_properties = Collections.synchronizedMap([:]);
+	private int internal_framerate = 10;
+	private float[] internal_bg = new float[3];
+	private boolean internal_opengl=false;
 	P4Applet p = null;
 	//audio
 	Minim minim;
-	AudioInput aud;
+	String audioInputName;
+	boolean audioEnabled;
+	float audioLevel=0;
+	//AudioInput aud;
 	//visual text
 	P4Text p4text = null;
 	boolean showText = true;
@@ -38,15 +44,31 @@ class P4Applet extends PApplet{
 	//are we done with initialization?
 	boolean p4aInit = false;
 
-	public P4Applet(int w, int h){
+	
+	public P4Applet(int w, int h, int frameRate, float[] bgColor, boolean openGL){
 		p4width = w;
 		p4height = h;
+		internal_framerate = frameRate;
+		internal_bg = bgColor;
+		internal_opengl=openGL;
 	}
-
+	
 	def enableText = { boolean enabled ->
 		showText = enabled;
 	}
 
+	public void initAudio(String lineInName, String chanType, int bufferSize, float sampleRate, int bitDepth){
+		minim = new Minim(this);
+		int type = Minim.STEREO;
+		if (chanType.equals( "Mono")){
+			type = ddf.minim.Minim.MONO;
+		}
+		this."${lineInName}" = minim.getLineIn(type, bufferSize, sampleRate, bitDepth);
+		audioInputName=lineInName;
+		audioEnabled = true;
+		println("audio initialized with line out name "+lineInName);
+	}
+	
 	synchronized void addMethod (P4Message message) {
 		println("adding message ${message.toString()}")
 		queue.add message
@@ -55,9 +77,13 @@ class P4Applet extends PApplet{
 
 	def gsetup = {
 		// queue.add( "ellipse(200,200,random(20),random(10));")
-		size(p4width,p4height, OPENGL);
-		//background(0);
-		frameRate(30);
+		if (internal_opengl){
+			size(p4width,p4height, OPENGL);
+		} else {
+			size(p4width,p4height, P3D);
+		}
+		background(internal_bg[0],internal_bg[1],internal_bg[2]);
+		frameRate(internal_framerate);
 		// makeMethod("override","ellipse(10,10,10,random(50));");
 	}
 
@@ -158,7 +184,7 @@ class P4Applet extends PApplet{
 
 	public void draw () {
 		//println(queue.size())
-		if (!queue.isEmpty()){
+		while (!queue.isEmpty()){
 			try {
 				P4Message internal_message = queue.remove()
 				//println("got message ${internal_message.toString()}");
@@ -177,6 +203,10 @@ class P4Applet extends PApplet{
 			}
 
 		}
+		//audio stuff
+		if (audioEnabled){
+			audioLevel=this."${audioInputName}".mix.level();
+		}
 		internal_gdraw();
 		if (showText){
 			p4text.calc();
@@ -194,7 +224,14 @@ class P4Applet extends PApplet{
 		return binding.getVariable (internal_name);
 	}
 
-	public	void setup () {
+	public void stop(){
+		super;
+		if (audioEnabled){
+			minim.stop();
+		}
+	}
+	
+	public void setup () {
 		errorSign = loadImage("internal_assets/error_x.png");
 		gsetup()
 		initText();

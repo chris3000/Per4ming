@@ -8,14 +8,27 @@ import java.awt.Point
 class P4Ming {
 	P4Editor p4e = null;
 	P4Viewer p4v = null;
-
+	
 	public void startViewer(int width, int height){
 		if (p4v == null){
 			p4v = new P4Viewer(this);
 			p4v.start(width, height);
 		}
 	}
-
+	
+	public void startViewer(int[] sz, int frameRate, float[] bgColor,boolean openGL, boolean fullScreen){
+		if (p4v == null){
+			p4v = new P4Viewer(this);
+			p4v.start(sz, frameRate, bgColor, openGL, fullScreen);
+		}
+	}
+	public void startViewer(int[] sz, int frameRate, float[] bgColor,boolean openGL, boolean fullScreen,
+		String lineInName, String chanType, int bufferSize, float sampleRate, int bitDepth){
+		if (p4v == null){
+			p4v = new P4Viewer(this);
+			p4v.start(sz, frameRate, bgColor, openGL, fullScreen, lineInName, chanType, bufferSize, sampleRate, bitDepth);
+		}
+	}
 	public void keyPressed(char c){
 		if (p4v != null){
 			p4v.keyPressed(c);

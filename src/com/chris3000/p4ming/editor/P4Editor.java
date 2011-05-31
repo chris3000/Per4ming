@@ -25,11 +25,13 @@ import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 
 import com.chris3000.p4ming.P4Ming;
+import com.chris3000.p4ming.P4Prefs;
 
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
 import java.awt.Font;
 import java.awt.CardLayout;
 import java.util.ArrayList;
@@ -43,6 +45,8 @@ import org.gjt.sp.jedit.View;
 import processing.app.syntax.JEditTextArea;
 
 public class P4Editor extends JFrame{
+	
+	private P4Prefs p4p = new P4Prefs(); //  @jve:decl-index=0:
 	private KeyStroke ctrlEnter = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, ActionEvent.CTRL_MASK);  //  @jve:decl-index=0:
 	private boolean started = false;
 	private static final long serialVersionUID = 1L;
@@ -51,10 +55,6 @@ public class P4Editor extends JFrame{
 	private JTextArea editorTextArea = null;
 	private JPanel controlPanel = null;
 	private JButton startStopButton = null;
-	private JLabel widthLabel = null;
-	private JTextField widthField = null;
-	private JLabel heightLabel = null;
-	private JTextField heightField = null;
 	private JButton submitButton = null;
 	//parent class
 	P4Ming p4m;  //  @jve:decl-index=0:
@@ -64,6 +64,8 @@ public class P4Editor extends JFrame{
 	private JMenu File = null;
 	private JMenu Options = null;
 	private JMenuItem submitMethod = null;
+	private JMenuItem preferences = null;
+	protected P4PrefsPane p4Prefs;
 	/**
 	 * This is the default constructor
 	 */
@@ -101,6 +103,12 @@ public class P4Editor extends JFrame{
 		this.setJMenuBar(getJmenuBar());
 		this.setContentPane(getJContentPane());
 		this.setTitle("P4Ming Editor");
+		this.addWindowListener(new java.awt.event.WindowAdapter() { 
+			public void windowClosing(WindowEvent e) {    
+				//System.out.println("windowClosing()"); // TODO Auto-generated Event stub windowClosing()
+				System.exit(0);
+			}
+		});
 	}
 
 	/**
@@ -256,22 +264,8 @@ public class P4Editor extends JFrame{
 			gridBagConstraints2.weightx = 1.0;
 			gridBagConstraints2.gridwidth = 5;
 			gridBagConstraints2.gridx = 0;
-			GridBagConstraints gridBagConstraints1 = new GridBagConstraints();
-			gridBagConstraints1.fill = GridBagConstraints.VERTICAL;
-			gridBagConstraints1.weightx = 1;
-			heightLabel = new JLabel();
-			heightLabel.setText("Height");
-			GridBagConstraints gridBagConstraints = new GridBagConstraints();
-			gridBagConstraints.fill = GridBagConstraints.VERTICAL;
-			gridBagConstraints.weightx = 1;
-			widthLabel = new JLabel();
-			widthLabel.setText("Width");
 			controlPanel = new JPanel();
 			controlPanel.setLayout(new GridBagLayout());
-			controlPanel.add(widthLabel, new GridBagConstraints());
-			controlPanel.add(getWidthField(), gridBagConstraints);
-			controlPanel.add(heightLabel, new GridBagConstraints());
-			controlPanel.add(getHeightField(), gridBagConstraints1);
 			controlPanel.add(getStartStopButton(), new GridBagConstraints());
 			controlPanel.add(getSubmitButton(), new GridBagConstraints());
 			controlPanel.add(getParamsField(), gridBagConstraints2);
@@ -294,9 +288,13 @@ public class P4Editor extends JFrame{
 			public void actionPerformed(ActionEvent e) {
 				if (!started){
 					startStopButton.setText("Stop");
-					int w = Integer.parseInt(widthField.getText());
-					int h = Integer.parseInt(heightField.getText());
-					p4m.startViewer(w, h);
+					//p4m.startViewer(w, h);
+					if (p4p.audioEnabled){
+						p4m.startViewer(p4p.size, p4p.frameRate, p4p.bgColor,p4p.openGL, p4p.fullScreen,
+								p4p.lineInName, p4p.channelType, p4p.bufferSize, p4p.sampleRate, p4p.bitDepth);
+					} else {
+						p4m.startViewer(p4p.size, p4p.frameRate, p4p.bgColor,p4p.openGL, p4p.fullScreen);
+					}
 					started = true;
 				} else {
 					startStopButton.setText("Start");
@@ -307,34 +305,6 @@ public class P4Editor extends JFrame{
 			}
 		});
 		return startStopButton;
-	}
-
-	/**
-	 * This method initializes widthField	
-	 * 	
-	 * @return javax.swing.JTextField	
-	 */
-	private JTextField getWidthField() {
-		if (widthField == null) {
-			widthField = new JTextField();
-			widthField.setText("800");
-			widthField.setPreferredSize(new Dimension(50, 28));
-		}
-		return widthField;
-	}
-
-	/**
-	 * This method initializes heightField	
-	 * 	
-	 * @return javax.swing.JTextField	
-	 */
-	private JTextField getHeightField() {
-		if (heightField == null) {
-			heightField = new JTextField();
-			heightField.setText("600");
-			heightField.setPreferredSize(new Dimension(50, 28));
-		}
-		return heightField;
 	}
 
 	/**
@@ -444,6 +414,7 @@ public class P4Editor extends JFrame{
 			Options = new JMenu();
 			Options.setText("Options");
 			Options.add(getSubmitMethod());
+			Options.add(getPreferences());
 		}
 		return Options;
 	}
@@ -505,6 +476,30 @@ public class P4Editor extends JFrame{
 			p4ms.toArray(p4mArray);
 //			for (int i = 0; i < p4mArray.length; i++) {System.out.println(p4mArray[i].toString());}
 			return p4mArray;
+		}
+
+		/**
+		 * This method initializes preferences	
+		 * 	
+		 * @return javax.swing.JMenuItem	
+		 */
+		private JMenuItem getPreferences() {
+			if (preferences == null) {
+				preferences = new JMenuItem();
+				preferences.setText("Preferences");
+				preferences.addActionListener(new java.awt.event.ActionListener() {
+					public void actionPerformed(java.awt.event.ActionEvent e) {
+						if (p4Prefs == null || !p4Prefs.isDisplayable()){
+							p4Prefs = new P4PrefsPane(p4p);
+							p4Prefs.setVisible(true);
+						} else {
+							p4Prefs.setFocusable(true);
+						}
+						System.out.println("actionPerformed()"); // TODO Auto-generated Event stub actionPerformed()
+					}
+				});
+			}
+			return preferences;
 		}
 
 	}
