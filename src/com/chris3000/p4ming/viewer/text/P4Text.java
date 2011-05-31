@@ -26,6 +26,11 @@ public class P4Text {
 	float targetScale = 1;
 	/** How fast to scale the text*/
 	float scaleVel = 0.12f;
+	//move up and down to keep cursor in frame
+	float currentVert = 0;
+	float currentHoriz = 0;
+	//float targetVert = 1;
+	//float vertVel = 0.12f;
 	/**The font.  Monaco by default*/
 	PFont font;
 	/** Smallest size */
@@ -67,6 +72,14 @@ public class P4Text {
 	}
 	
 	public void calc(){
+		calcScale();
+		calcVert();
+		if (cursorEnabled){
+			cursor.calcBlink();
+		}
+	}
+
+	private void calcScale() {
 		if (targetScale != currentScale){
 			float dist = Math.abs(currentScale - targetScale);
 			//scale up or down?
@@ -79,12 +92,27 @@ public class P4Text {
 			//are we close enough?
 			if ((dist*2*scaleVel)< 0.0001){
 				currentScale = targetScale;
-				p.println("settled");
+				p.println("scale settled");
 			}
 		}
-		if (cursorEnabled){
-			cursor.calcBlink();
-		}
+	}
+	
+	private void calcVert() {
+/*		if (targetVert != currentVert){
+			float dist = Math.abs(currentVert - targetVert);
+			//scale up or down?
+			float dir = 1; //down
+			if (targetVert > currentVert){
+				dir = -1; //up
+			}
+
+			currentVert = currentVert - (dist*vertVel*dir);
+			//are we close enough?
+			if ((dist*2*vertVel)< 0.0001){
+				currentVert = targetVert;
+				p.println("vert settled");
+			}
+		}			*/
 	}
 	
 	public synchronized void render(){
@@ -95,16 +123,25 @@ public class P4Text {
 		p.fill(255);
 		p.textFont(font);
 		p.pushMatrix();
-			float h = (((float)p.width / 2) - (lines.size()*(maxLineSpace*currentScale)));
-			p.translate(leftPadding,h,0);
+			//float vertOffset = (currentVert-targetVert);
+			float h = (((float)p.width / 2) - (lines.size()*(maxLineSpace*currentScale)))+currentVert;
+			p.println("currentHoriz="+currentHoriz+", leftPadding="+leftPadding);
+			p.translate(leftPadding+currentHoriz,h,0);
 			p.scale(currentScale);
 			p.text(getText(), 0, 0, 0);
 			//draw cursor
 			if (cursorEnabled){
+				float cursorX = cursor.x*38;
+				float cursorY= cursor.y*maxLineSpace+15;
+				//do we need to offset the text to keep the cursor on the screen?
+				float screenCX = p.screenX(cursorX, cursorY);
+				float screenCY = p.screenY(cursorX, cursorY);
+				offsetText(screenCX, screenCY);
+				//draw it
 				p.fill(255,128);
 				p.noStroke();
 				if (cursor.isVisible()){
-				p.rect(cursor.x*38, cursor.y*maxLineSpace+15, 40, -70);
+				p.rect(cursorX, cursorY, 40, -70);
 				}
 				if(cursor.isSelected()){
 					Point[] range = cursor.getSelectRange();
@@ -139,6 +176,31 @@ public class P4Text {
 			p.fill(255);
 			p.textFont(font, 14);
 			p.text(""+(int)(p.frameRate),5,p.height-30);
+		}
+	}
+	
+	
+	//determine whether we need to move the text up, down, right, or left to keep cursor on screen
+	public void offsetText(float cx, float cy){
+		if (cy< p.height*0.20f){ //too high
+			currentVert += 6;
+		} else if (cy > p.height*0.75f){ //too low
+			currentVert-=6;
+		}
+		if (currentScale <=0.3f){
+		if (cx< p.width*0.25f){ //too left
+			currentHoriz += 30;
+			if (currentHoriz > 0){
+				currentHoriz = 0;
+			}
+		} else if (cx > p.width*0.95f){ //too right
+			currentHoriz-=20;
+		}
+		} else if (currentHoriz < 0){
+			currentHoriz+=30;
+			if (currentHoriz > 0){
+				currentHoriz=0;
+			}
 		}
 	}
 	

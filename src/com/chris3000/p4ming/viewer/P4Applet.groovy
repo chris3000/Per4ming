@@ -108,16 +108,6 @@ class P4Applet extends PApplet{
 		switch(currentEditor){
 			case 1: try{draw1();}catch (Exception e){internal_drawError(e);}; break;
 		}
-		/*pushMatrix();
-		 translate(100,200);
-		 box(40);
-		 popMatrix();
-		 try {
-		 override();
-		 //override2();
-		 } catch (Exception e){
-		 //println("!");
-		 }*/
 	}
 
 	def draw1 = {
@@ -179,7 +169,7 @@ class P4Applet extends PApplet{
 	
 	public void caretEvent(Point dot, Point mark){
 		p4text.setSelection (dot, mark);
-		println(dot.toString()+"  "+mark.toString())
+		//println(dot.toString()+"  "+mark.toString())
 	}
 
 	public void draw () {
@@ -209,8 +199,13 @@ class P4Applet extends PApplet{
 		}
 		internal_gdraw();
 		if (showText){
+			try{
 			p4text.calc();
 			p4text.render();
+			} catch(Exception e){
+				e.printStackTrace();
+				
+			}
 		}
 	}
 
