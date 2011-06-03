@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Insets;
 import java.awt.Point;
 
+import javax.swing.DefaultListModel;
 import javax.swing.JPanel;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
@@ -26,6 +27,7 @@ import javax.swing.text.BadLocationException;
 
 import com.chris3000.p4ming.P4Ming;
 import com.chris3000.p4ming.P4Prefs;
+import com.chris3000.p4ming.editor.project.P4Class;
 
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -43,29 +45,50 @@ import javax.swing.JMenuItem;
 import org.gjt.sp.jedit.Buffer;
 import org.gjt.sp.jedit.View;
 import processing.app.syntax.JEditTextArea;
+import javax.swing.JList;
+import javax.swing.JTabbedPane;
+import java.awt.Color;
+import java.awt.ComponentOrientation;
+import javax.swing.ListSelectionModel;
+import javax.swing.JSplitPane;
+import javax.swing.ImageIcon;
+import javax.swing.SwingConstants;
+import java.awt.FlowLayout;
+import javax.swing.BoxLayout;
+import java.awt.GridLayout;
 
 public class P4Editor extends JFrame{
-	
+	JTextField activePropField = null;
 	private P4Prefs p4p = new P4Prefs(); //  @jve:decl-index=0:
 	private KeyStroke ctrlEnter = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, ActionEvent.CTRL_MASK);  //  @jve:decl-index=0:
 	private boolean started = false;
 	private static final long serialVersionUID = 1L;
 	private JPanel jContentPane = null;
 	private JScrollPane editorPane = null;
-	private JTextArea editorTextArea = null;
+	private P4Class editorTextArea = null;
 	private JPanel controlPanel = null;
 	private JButton startStopButton = null;
 	private JButton submitButton = null;
 	//parent class
 	P4Ming p4m;  //  @jve:decl-index=0:
-	private JTextField propertyField = null;
-	private JButton paramsSubmit = null;
 	private JMenuBar jmenuBar = null;
 	private JMenu File = null;
 	private JMenu Options = null;
 	private JMenuItem submitMethod = null;
 	private JMenuItem preferences = null;
 	protected P4PrefsPane p4Prefs;
+	private JTabbedPane tabPane = null;
+	private JList classList = null;
+	private JSplitPane splitPane1 = null;
+	private JMenuItem newClass = null;
+	private JSplitPane projectPane = null;
+	private JPanel propsPanel = null;
+	private JButton addPropButton = null;
+	private JScrollPane propsFieldContainer = null;
+	private JPanel jPanel = null;
+	private JTextField jTextField = null;
+	private JPanel classPanel = null;
+	private JButton classButton = null;
 	/**
 	 * This is the default constructor
 	 */
@@ -78,12 +101,12 @@ public class P4Editor extends JFrame{
 		p4m= _p4m;
 	}
 	public void setStop(){
-		startStopButton.setText("Start");
+		startStopButton.setIcon(new ImageIcon(getClass().getResource("/editor/start_button.png")));
 		started = false;
 	}
 
 	public void setStart(){
-		startStopButton.setText("Stop");
+		startStopButton.setIcon(new ImageIcon(getClass().getResource("/editor/stop_button.png")));
 		started = true;
 	}
 
@@ -99,7 +122,8 @@ public class P4Editor extends JFrame{
 	 * @return void
 	 */
 	private void initialize() {
-		this.setSize(550, 400);
+		this.setSize(654, 445);
+		this.setBackground(new Color(51, 51, 51));
 		this.setJMenuBar(getJmenuBar());
 		this.setContentPane(getJContentPane());
 		this.setTitle("P4Ming Editor");
@@ -121,7 +145,7 @@ public class P4Editor extends JFrame{
 			jContentPane = new JPanel();
 			jContentPane.setLayout(new BorderLayout());
 			jContentPane.add(getControlPanel(), BorderLayout.NORTH);
-			jContentPane.add(getEditorPane(), BorderLayout.CENTER);
+			jContentPane.add(getTabPane(), BorderLayout.CENTER);
 		}
 		return jContentPane;
 	}
@@ -145,9 +169,9 @@ public class P4Editor extends JFrame{
 	 * 	
 	 * @return javax.swing.JTextArea	
 	 */
-	private JTextArea getEditorTextArea() {
+	private P4Class getEditorTextArea() {
 		if (editorTextArea == null) {
-			editorTextArea = new JTextArea();
+			editorTextArea = new P4Class();
 			//editorTextArea = new JEditTextArea(new processing.app.syntax.TextAreaDefaults());
 			editorTextArea.setMargin(new Insets(2,6,2,6));
 			editorTextArea.setText("def draw1 = {->\n\t//code goes here\n\t//ellipse(200,200,random(20),random(10));\n}");
@@ -255,21 +279,22 @@ public class P4Editor extends JFrame{
 	 */
 	private JPanel getControlPanel() {
 		if (controlPanel == null) {
-			GridBagConstraints gridBagConstraints3 = new GridBagConstraints();
-			gridBagConstraints3.gridx = 5;
-			gridBagConstraints3.gridy = 1;
-			GridBagConstraints gridBagConstraints2 = new GridBagConstraints();
-			gridBagConstraints2.fill = GridBagConstraints.VERTICAL;
-			gridBagConstraints2.gridy = 1;
-			gridBagConstraints2.weightx = 1.0;
-			gridBagConstraints2.gridwidth = 5;
-			gridBagConstraints2.gridx = 0;
+			GridBagConstraints gridBagConstraints1 = new GridBagConstraints();
+			gridBagConstraints1.anchor = GridBagConstraints.WEST;
+			gridBagConstraints1.weightx = 1.0;
+			gridBagConstraints1.gridheight = 2;
+			gridBagConstraints1.ipady = 6;
+			gridBagConstraints1.ipadx = 6;
+			gridBagConstraints1.fill = GridBagConstraints.NONE;
+			GridBagConstraints gridBagConstraints = new GridBagConstraints();
+			gridBagConstraints.anchor = GridBagConstraints.EAST;
+			gridBagConstraints.ipady = 6;
+			gridBagConstraints.weightx = 0.0;
 			controlPanel = new JPanel();
 			controlPanel.setLayout(new GridBagLayout());
-			controlPanel.add(getStartStopButton(), new GridBagConstraints());
-			controlPanel.add(getSubmitButton(), new GridBagConstraints());
-			controlPanel.add(getParamsField(), gridBagConstraints2);
-			controlPanel.add(getParamsSubmit(), gridBagConstraints3);
+			controlPanel.setBackground(new Color(51, 51, 51));
+			controlPanel.add(getStartStopButton(), gridBagConstraints);
+			controlPanel.add(getSubmitButton(), gridBagConstraints1);
 		}
 		return controlPanel;
 	}
@@ -282,12 +307,15 @@ public class P4Editor extends JFrame{
 	private JButton getStartStopButton() {
 		if (startStopButton == null) {
 			startStopButton = new JButton();
-			startStopButton.setText("Start");
+			startStopButton.setText("");
+			startStopButton.setIcon(new ImageIcon(getClass().getResource("/editor/start_button.png")));
+			startStopButton.setPreferredSize(new Dimension(60, 20));
+			startStopButton.setBorderPainted(false);
 		}
 		startStopButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (!started){
-					startStopButton.setText("Stop");
+					startStopButton.setIcon(new ImageIcon(getClass().getResource("/editor/stop_button.png")));
 					//p4m.startViewer(w, h);
 					if (p4p.audioEnabled){
 						p4m.startViewer(p4p.size, p4p.frameRate, p4p.bgColor,p4p.openGL, p4p.fullScreen,
@@ -297,7 +325,7 @@ public class P4Editor extends JFrame{
 					}
 					started = true;
 				} else {
-					startStopButton.setText("Start");
+					startStopButton.setIcon(new ImageIcon(getClass().getResource("/editor/start_button.png")));
 					started = false;
 					p4m.editorStop();
 				}
@@ -315,7 +343,10 @@ public class P4Editor extends JFrame{
 	private JButton getSubmitButton() {
 		if (submitButton == null) {
 			submitButton = new JButton();
-			submitButton.setText("Submit");
+			//submitButton.setText("Submit");
+			submitButton.setBorderPainted(false);
+			submitButton.setPreferredSize(new Dimension(80, 20));
+			submitButton.setIcon(new ImageIcon(getClass().getResource("/editor/submit_button.png")));
 		}
 		submitButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -325,46 +356,9 @@ public class P4Editor extends JFrame{
 		return submitButton;
 	}
 
-	/**
-	 * This method initializes paramsField	
-	 * 	
-	 * @return javax.swing.JTextField	
-	 */
-	private JTextField getParamsField() {
-		if (propertyField == null) {
-			propertyField = new JTextField();
-			propertyField.setName("propertyField");
-			propertyField.setPreferredSize(new Dimension(450, 28));
-			propertyField.addActionListener(new ActionListener(){
-				public void actionPerformed(ActionEvent evt) {
-					submitProperty();
-				}
-			});
-		}
-		return propertyField;
-	}
-
-	/**
-	 * This method initializes paramsSubmit	
-	 * 	
-	 * @return javax.swing.JButton	
-	 */
-	private JButton getParamsSubmit() {
-		if (paramsSubmit == null) {
-			paramsSubmit = new JButton();
-			paramsSubmit.setText("Property");
-			paramsSubmit.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					submitProperty();
-				}
-			});
-		}
-		return paramsSubmit;
-	}
-
-	private void submitProperty() {
+	private void submitProperty(String text) {
 		if (started){
-			String text = propertyField.getText();
+			//String text = propertyField.getText();
 			String[] nameValue = text.split("=");
 			if(nameValue.length == 2){
 				P4Message p4mess = new P4Message(nameValue[0].trim(), nameValue[1].trim(), P4Message.PROPERTY);
@@ -415,6 +409,7 @@ public class P4Editor extends JFrame{
 			Options.setText("Options");
 			Options.add(getSubmitMethod());
 			Options.add(getPreferences());
+			Options.add(getNewClass());
 		}
 		return Options;
 	}
@@ -502,6 +497,249 @@ public class P4Editor extends JFrame{
 			return preferences;
 		}
 
-	}
+		/**
+		 * This method initializes tabPane	
+		 * 	
+		 * @return javax.swing.JTabbedPane	
+		 */
+		private JTabbedPane getTabPane() {
+			if (tabPane == null) {
+				tabPane = new JTabbedPane();
+				tabPane.setBackground(new Color(51, 51, 51));
+				tabPane.addTab("1", null, getSplitPane1(), null);
+			}
+			return tabPane;
+		}
+
+		/**
+		 * This method initializes classList	
+		 * 	
+		 * @return javax.swing.JList	
+		 */
+		private JList getClassList() {
+			if (classList == null) {
+				DefaultListModel classListModel = new DefaultListModel();
+				classListModel.setSize(1);
+				classListModel.addElement("main");
+				classList = new JList(classListModel);
+				//classList.set
+				classList.setPreferredSize(new Dimension(80, 80));
+				classList.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+				classList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+				classList.setFont(new Font("Monaco", Font.PLAIN, 12));
+				classList.setSelectedIndex(0);
+				classList.setModel(classListModel);
+				classList.setBackground(new Color(237, 243, 254));
+			}
+			return classList;
+		}
+
+		/**
+		 * This method initializes splitPane1	
+		 * 	
+		 * @return javax.swing.JSplitPane	
+		 */
+		private JSplitPane getSplitPane1() {
+			if (splitPane1 == null) {
+				splitPane1 = new JSplitPane();
+				splitPane1.setContinuousLayout(true);
+				splitPane1.setBackground(new Color(102, 102, 102));
+				splitPane1.setLeftComponent(getClassPanel());
+				splitPane1.setRightComponent(getProjectPane());
+			}
+			return splitPane1;
+		}
+
+		/**
+		 * This method initializes newClass	
+		 * 	
+		 * @return javax.swing.JMenuItem	
+		 */
+		private JMenuItem getNewClass() {
+			if (newClass == null) {
+				newClass = new JMenuItem();
+				newClass.setText("New Class");
+				newClass.addActionListener(new java.awt.event.ActionListener() {
+					public void actionPerformed(java.awt.event.ActionEvent e) {
+						DefaultListModel classListModel = (DefaultListModel) classList.getModel();
+						classListModel.setSize(classListModel.getSize()+1);
+						classListModel.addElement("New Class");
+						System.out.println("actionPerformed()"); // TODO Auto-generated Event stub actionPerformed()
+					}
+				});
+			}
+			return newClass;
+		}
+
+		/**
+		 * This method initializes projectPane	
+		 * 	
+		 * @return javax.swing.JSplitPane	
+		 */
+		private JSplitPane getProjectPane() {
+			if (projectPane == null) {
+				projectPane = new JSplitPane();
+				projectPane.setBackground(new Color(102, 102, 102));
+				projectPane.setContinuousLayout(true);
+				projectPane.setResizeWeight(1.0D);
+				projectPane.setLeftComponent(getEditorPane());
+				projectPane.setRightComponent(getPropsPanel());
+			}
+			return projectPane;
+		}
+
+		/**
+		 * This method initializes propsPanel	
+		 * 	
+		 * @return javax.swing.JPanel	
+		 */
+		private JPanel getPropsPanel() {
+			if (propsPanel == null) {
+				GridBagConstraints gridBagConstraints6 = new GridBagConstraints();
+				gridBagConstraints6.insets = new Insets(0, 0, 0, 0);
+				gridBagConstraints6.gridy = 1;
+				gridBagConstraints6.ipadx = 0;
+				gridBagConstraints6.fill = GridBagConstraints.BOTH;
+				gridBagConstraints6.anchor = GridBagConstraints.SOUTH;
+				gridBagConstraints6.gridx = 0;
+				GridBagConstraints gridBagConstraints5 = new GridBagConstraints();
+				gridBagConstraints5.fill = GridBagConstraints.BOTH;
+				gridBagConstraints5.gridy = 0;
+				gridBagConstraints5.ipadx = 116;
+				gridBagConstraints5.ipady = 156;
+				gridBagConstraints5.weightx = 1.0;
+				gridBagConstraints5.weighty = 1.0;
+				gridBagConstraints5.gridx = 0;
+				propsPanel = new JPanel();
+				propsPanel.setLayout(new GridBagLayout());
+				propsPanel.setPreferredSize(new Dimension(50, 39));
+				propsPanel.add(getPropsFieldContainer(), gridBagConstraints5);
+				propsPanel.add(getAddPropButton(), gridBagConstraints6);
+			}
+			return propsPanel;
+		}
+
+		/**
+		 * This method initializes addPropButton	
+		 * 	
+		 * @return javax.swing.JButton	
+		 */
+		private JButton getAddPropButton() {
+			if (addPropButton == null) {
+				addPropButton = new JButton();
+				addPropButton.setVerticalAlignment(SwingConstants.CENTER);
+				addPropButton.setHorizontalTextPosition(SwingConstants.CENTER);
+				addPropButton.setName("addPropButton");
+				addPropButton.setPreferredSize(new Dimension(200, 29));
+				addPropButton.setComponentOrientation(ComponentOrientation.UNKNOWN);
+				addPropButton.setText("New Property");
+				addPropButton.addActionListener(new java.awt.event.ActionListener() {
+					public void actionPerformed(java.awt.event.ActionEvent e) {
+						jPanel.add(getJTextField(), null);
+						jPanel.validate();
+						jPanel.repaint();
+						System.out.println("actionPerformed()"); // TODO Auto-generated Event stub actionPerformed()
+					}
+				});
+			}
+			return addPropButton;
+		}
+
+		/**
+		 * This method initializes propsFieldContainer	
+		 * 	
+		 * @return javax.swing.JScrollPane	
+		 */
+		private JScrollPane getPropsFieldContainer() {
+			if (propsFieldContainer == null) {
+				propsFieldContainer = new JScrollPane();
+				propsFieldContainer.setViewportView(getJPanel());
+			}
+			return propsFieldContainer;
+		}
+
+		/**
+		 * This method initializes jPanel	
+		 * 	
+		 * @return javax.swing.JPanel	
+		 */
+		private JPanel getJPanel() {
+			if (jPanel == null) {
+				jPanel = new JPanel();
+				jPanel.setLayout(new BoxLayout(getJPanel(), BoxLayout.Y_AXIS));
+				jPanel.setBackground(new Color(51, 51, 51));
+				jPanel.add(getJTextField(), null);
+			}
+			return jPanel;
+		}
+
+		/**
+		 * This method initializes jTextField	
+		 * 	
+		 * @return javax.swing.JTextField	
+		 */
+		private JTextField getJTextField() {
+				JTextField jTextField = new JTextField(2);
+				jTextField.setHorizontalAlignment(JTextField.LEFT);
+				jTextField.setPreferredSize(new Dimension(10, 28));
+				jTextField.setMaximumSize(new Dimension(900, 28));
+				jTextField.addActionListener(new ActionListener(){
+					public void actionPerformed(ActionEvent evt) {
+						submitProperty(activePropField.getText());
+						System.out.println("Action performed!!");
+					}
+				});
+				jTextField.addFocusListener(new java.awt.event.FocusAdapter() {   
+					public void focusLost(java.awt.event.FocusEvent e) {
+						submitProperty(activePropField.getText());
+						activePropField = null;
+						System.out.println("focusLost()"); // TODO Auto-generated Event stub focusLost()
+					}
+					public void focusGained(java.awt.event.FocusEvent e) {
+						activePropField = (JTextField)e.getSource();
+						System.out.println("focusGained()"); // TODO Auto-generated Event stub focusGained()
+					}
+				});
+			return jTextField;
+		}
+
+		/**
+		 * This method initializes classPanel	
+		 * 	
+		 * @return javax.swing.JPanel	
+		 */
+		private JPanel getClassPanel() {
+			if (classPanel == null) {
+				GridBagConstraints gridBagConstraints8 = new GridBagConstraints();
+				gridBagConstraints8.gridx = 0;
+				gridBagConstraints8.fill = GridBagConstraints.HORIZONTAL;
+				gridBagConstraints8.anchor = GridBagConstraints.SOUTH;
+				gridBagConstraints8.gridy = 1;
+				GridBagConstraints gridBagConstraints7 = new GridBagConstraints();
+				gridBagConstraints7.fill = GridBagConstraints.BOTH;
+				gridBagConstraints7.weighty = 1.0;
+				gridBagConstraints7.weightx = 1.0;
+				classPanel = new JPanel();
+				classPanel.setLayout(new GridBagLayout());
+				classPanel.add(getClassList(), gridBagConstraints7);
+				classPanel.add(getClassButton(), gridBagConstraints8);
+			}
+			return classPanel;
+		}
+
+		/**
+		 * This method initializes classButton	
+		 * 	
+		 * @return javax.swing.JButton	
+		 */
+		private JButton getClassButton() {
+			if (classButton == null) {
+				classButton = new JButton();
+				classButton.setText("New Class");
+			}
+			return classButton;
+		}
+
+	}  //  @jve:decl-index=0:visual-constraint="10,10"
 
 

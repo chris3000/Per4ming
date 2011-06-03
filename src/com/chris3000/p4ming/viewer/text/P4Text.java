@@ -125,7 +125,7 @@ public class P4Text {
 		p.pushMatrix();
 			//float vertOffset = (currentVert-targetVert);
 			float h = (((float)p.width / 2) - (lines.size()*(maxLineSpace*currentScale)))+currentVert;
-			p.println("currentHoriz="+currentHoriz+", leftPadding="+leftPadding);
+			//p.println("currentHoriz="+currentHoriz+", leftPadding="+leftPadding);
 			p.translate(leftPadding+currentHoriz,h,0);
 			p.scale(currentScale);
 			p.text(getText(), 0, 0, 0);
@@ -183,9 +183,9 @@ public class P4Text {
 	//determine whether we need to move the text up, down, right, or left to keep cursor on screen
 	public void offsetText(float cx, float cy){
 		if (cy< p.height*0.20f){ //too high
-			currentVert += 6;
+			currentVert += 10;
 		} else if (cy > p.height*0.75f){ //too low
-			currentVert-=6;
+			currentVert-=10;
 		}
 		if (currentScale <=0.3f){
 		if (cx< p.width*0.25f){ //too left
