@@ -59,13 +59,14 @@ import java.awt.GridLayout;
 
 public class P4Editor extends JFrame{
 	JTextField activePropField = null;
+	P4Class activeTextArea = null;
 	private P4Prefs p4p = new P4Prefs(); //  @jve:decl-index=0:
 	private KeyStroke ctrlEnter = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, ActionEvent.CTRL_MASK);  //  @jve:decl-index=0:
 	private boolean started = false;
 	private static final long serialVersionUID = 1L;
 	private JPanel jContentPane = null;
 	private JScrollPane editorPane = null;
-	private P4Class editorTextArea = null;
+	//private P4Class editorTextArea = null;
 	private JPanel controlPanel = null;
 	private JButton startStopButton = null;
 	private JButton submitButton = null;
@@ -159,7 +160,7 @@ public class P4Editor extends JFrame{
 		if (editorPane == null) {
 			editorPane = new JScrollPane();
 			editorPane.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.RAISED));
-			editorPane.setViewportView(getEditorTextArea());
+			editorPane.setViewportView(activeTextArea);
 		}
 		return editorPane;
 	}
@@ -169,24 +170,29 @@ public class P4Editor extends JFrame{
 	 * 	
 	 * @return javax.swing.JTextArea	
 	 */
-	private P4Class getEditorTextArea() {
-		if (editorTextArea == null) {
-			editorTextArea = new P4Class();
+	private P4Class createClass(String name) {
+			P4Class editorTextArea = new P4Class();
 			//editorTextArea = new JEditTextArea(new processing.app.syntax.TextAreaDefaults());
 			editorTextArea.setMargin(new Insets(2,6,2,6));
-			editorTextArea.setText("def draw1 = {->\n\t//code goes here\n\t//ellipse(200,200,random(20),random(10));\n}");
 			editorTextArea.setFont(new Font("Monaco", Font.PLAIN, 12));
 			editorTextArea.setTabSize(3);
 			editorTextArea.setWrapStyleWord(true);
-		
+			if (name != null){
+				if (name.equals("main")){
+					editorTextArea.setText("def draw1 = {->\n\t//code goes here\n\t//ellipse(200,200,random(20),random(10));\n}");
+				} else {
+					editorTextArea.setText("class "+name+" {\n\t//code goes here\n}\n");
+				}
+				editorTextArea.setName(name);
+			}
 			editorTextArea.addCaretListener(new CaretListener() {
 				public void caretUpdate(CaretEvent caretEvent) {
 						int dot = caretEvent.getDot();
 						int mark = caretEvent.getMark();
 						System.out.println(""+dot+","+mark);
-						Point dotLoc = getDocXYLoc(editorTextArea,dot);
+						Point dotLoc = getDocXYLoc(activeTextArea,dot);
 						if(mark != dot){ //selection
-							Point markLoc = getDocXYLoc(editorTextArea,mark);
+							Point markLoc = getDocXYLoc(activeTextArea,mark);
 							p4m.caretEvent(dotLoc,markLoc);
 						} else { 
 							p4m.caretEvent(dotLoc);
@@ -240,18 +246,17 @@ public class P4Editor extends JFrame{
 						// TODO Auto-generated catch block
 						e1.printStackTrace();
 					}
-					Point addLoc = getDocXYLoc(editorTextArea,e.getOffset());
+					Point addLoc = getDocXYLoc(activeTextArea,e.getOffset());
 					p4m.addText(addLoc, changedText);
 				}
 
 				@Override
 				public void removeUpdate(DocumentEvent e) {
 					//System.out.println("length="+e.getLength()+", offset="+e.getOffset()+", type="+e.getType());
-					Point removeLoc = getDocXYLoc(editorTextArea,e.getOffset());
+					Point removeLoc = getDocXYLoc(activeTextArea,e.getOffset());
 					p4m.removeText(removeLoc,e.getLength());
 				}	
 			});
-		}
 		return editorTextArea;
 	}
 
@@ -268,7 +273,7 @@ public class P4Editor extends JFrame{
 	}
 	
 	public void getCurrentText(){
-		p4m.setText(editorTextArea.getText());
+		p4m.setText(activeTextArea.getText());
 	}
 
 
@@ -350,7 +355,7 @@ public class P4Editor extends JFrame{
 		}
 		submitButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				submitMethods(editorTextArea.getText());
+				submitMethods(activeTextArea.getText());
 			}
 		});
 		return submitButton;
@@ -426,7 +431,11 @@ public class P4Editor extends JFrame{
 			submitMethod.setAccelerator(ctrlEnter);
 			submitMethod.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
-					submitMethods(editorTextArea.getText());
+					if(activeTextArea.toString().equals("main")){
+						submitMethods(activeTextArea.getText());
+					} else {
+						submitClass(activeTextArea.getText());
+					}
 					System.out.println("actionPerformed()"); // TODO Auto-generated Event stub actionPerformed()
 				}
 			});
@@ -438,6 +447,12 @@ public class P4Editor extends JFrame{
 		if (started){
 			P4Message[] p4mess = parseMethods(methods);
 			p4m.addMethods(p4mess);
+		}
+	}
+	
+	private void submitClass(String classStr) {
+		if (started){
+			p4m.addClass(new P4Message(null, classStr,P4Message.CLASS));
 		}
 	}
 		private P4Message[] parseMethods(String methods){
@@ -519,8 +534,9 @@ public class P4Editor extends JFrame{
 		private JList getClassList() {
 			if (classList == null) {
 				DefaultListModel classListModel = new DefaultListModel();
-				classListModel.setSize(1);
-				classListModel.addElement("main");
+				//classListModel.setSize(1);
+				activeTextArea = createClass("main");
+				classListModel.addElement(activeTextArea);
 				classList = new JList(classListModel);
 				//classList.set
 				classList.setPreferredSize(new Dimension(80, 80));
@@ -530,10 +546,22 @@ public class P4Editor extends JFrame{
 				classList.setSelectedIndex(0);
 				classList.setModel(classListModel);
 				classList.setBackground(new Color(237, 243, 254));
+				classList
+						.addListSelectionListener(new javax.swing.event.ListSelectionListener() {
+							public void valueChanged(javax.swing.event.ListSelectionEvent e) {
+								if (classList.getSelectedIndex()>-1){
+									activeTextArea = (P4Class) classList.getSelectedValue();
+									setEditorPaneView(activeTextArea);
+									getCurrentText();
+									System.out.println("valueChanged() "+System.currentTimeMillis()); // TODO Auto-generated Event stub valueChanged()
+
+								}
+							}
+						});
 			}
 			return classList;
 		}
-
+		
 		/**
 		 * This method initializes splitPane1	
 		 * 	
@@ -736,8 +764,27 @@ public class P4Editor extends JFrame{
 			if (classButton == null) {
 				classButton = new JButton();
 				classButton.setText("New Class");
+				classButton.addActionListener(new java.awt.event.ActionListener() {
+					public void actionPerformed(java.awt.event.ActionEvent e) {
+						DefaultListModel listModel = (DefaultListModel)classList.getModel();
+						int index = listModel.getSize();
+						activeTextArea = createClass("MyClass"+index);
+						listModel.addElement(activeTextArea);
+						classList.setSelectedIndex(index);
+						classList.revalidate();
+						classList.repaint();
+						setEditorPaneView(activeTextArea);
+						System.out.println("actionPerformed()"); // TODO Auto-generated Event stub actionPerformed()
+					}
+				});
 			}
 			return classButton;
+		}
+
+		private void setEditorPaneView(P4Class textArea) {
+			editorPane.setViewportView(textArea);
+			editorPane.revalidate();
+			editorPane.repaint();
 		}
 
 	}  //  @jve:decl-index=0:visual-constraint="10,10"

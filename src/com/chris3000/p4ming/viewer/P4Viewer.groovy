@@ -36,7 +36,7 @@ public class P4Viewer extends WindowAdapter{
 			p4a.addMethod(closure);
 		}
 	}
-
+	
 	public void keyPressed(char c){
 		if (p4a != null){
 			p4a.p4KeyPressed(c);

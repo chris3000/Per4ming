@@ -65,6 +65,12 @@ class P4Ming {
 		}
 	}
 	
+	public void addClass(P4Message message){
+		if (p4v != null){
+			p4v.addMethod(message);
+		}
+	}
+	
 	public void addMethods(P4Message[] messages){
 		if (p4v != null){
 			for (int i = 0; i < messages.length; i++) {

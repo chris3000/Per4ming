@@ -17,12 +17,15 @@ import processing.core.PImage
 class P4Applet extends PApplet{
 	Binding binding = new Binding([:]);
 	GroovyShell shell = new GroovyShell(binding);
+	GroovyClassLoader gcl = new GroovyClassLoader();
 	def queue = [] as LinkedList;
 	//holder for added properties.  Kind of a hack?  rather use metaclass.
 	private def internal_properties = Collections.synchronizedMap([:]);
+	private def internal_classes=Collections.synchronizedMap([:]);
 	private int internal_framerate = 10;
 	private float[] internal_bg = new float[3];
 	private boolean internal_opengl=false;
+
 	P4Applet p = null;
 	//audio
 	Minim minim;
@@ -74,7 +77,7 @@ class P4Applet extends PApplet{
 		queue.add message
 		//println("queue size:"+queue.size)
 	}
-
+	
 	def gsetup = {
 		// queue.add( "ellipse(200,200,random(20),random(10));")
 		if (internal_opengl){
@@ -142,7 +145,18 @@ class P4Applet extends PApplet{
 		this."${name}" = propEvaluate(value);
 		println(name+"="+value);
 	}
-
+	
+	def makeClass = {className, classText->
+		Class clz = gcl.parseClass(classText);
+		String simpleName=clz.getSimpleName();
+		internal_classes.put( clz.getSimpleName(), clz)
+		this.metaClass."new${simpleName}"= {Object[] args, String key="${simpleName}"->
+			Class clz2 =internal_classes.get(key);
+			clz2.newInstance(args)
+		}
+		println("new class ="+clz.getSimpleName());
+	}
+	
 	def runOnce = {value ->
 		//GroovyShell shell = new GroovyShell();
 		Closure received = shell.evaluate("{->${value}}");
@@ -182,6 +196,7 @@ class P4Applet extends PApplet{
 				//println(""+type+": "+internal_message.getTypeString());
 				switch(internal_message.type){
 					case P4Message.METHOD: makeMethod(internal_message.name, internal_message.value); break;
+					case P4Message.CLASS: makeClass(internal_message.name, internal_message.value); break;
 					case P4Message.PROPERTY: makeProperty(internal_message.name, internal_message.value); break;
 					case P4Message.RUN_ONCE: runOnce(internal_message.value); break;
 					//default: makeMethod(internal_message.name, internal_message.value); break;
