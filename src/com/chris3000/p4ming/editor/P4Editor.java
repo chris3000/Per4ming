@@ -135,7 +135,7 @@ public class P4Editor extends JFrame{
 	private void initialize() {
 		p4e = this;
 		this.setSize(p4p.editorSize[0], p4p.editorSize[1]);
-		this.setSize(650,470);
+		//this.setSize(650,470);
 		this.setLocation(p4p.editorLoc[0], p4p.editorLoc[1]);
 		this.setBackground(new Color(51, 51, 51));
 		this.setJMenuBar(getJmenuBar());
@@ -621,6 +621,7 @@ public class P4Editor extends JFrame{
 			propsPanel = new JPanel();
 			propsPanel.setLayout(new GridBagLayout());
 			propsPanel.setPreferredSize(new Dimension(50, 39));
+			propsPanel.setBackground(new Color(51, 51, 51));
 			propsPanel.add(getPropsFieldContainer(), gridBagConstraints5);
 			propsPanel.add(getAddPropButton(), gridBagConstraints6);
 		}
@@ -638,9 +639,11 @@ public class P4Editor extends JFrame{
 			addPropButton.setVerticalAlignment(SwingConstants.CENTER);
 			addPropButton.setHorizontalTextPosition(SwingConstants.CENTER);
 			addPropButton.setName("addPropButton");
+			addPropButton.setBorderPainted(false);
 			addPropButton.setPreferredSize(new Dimension(200, 29));
 			addPropButton.setComponentOrientation(ComponentOrientation.UNKNOWN);
-			addPropButton.setText("New Property");
+			addPropButton.setBackground(new Color(51, 51, 51));
+			addPropButton.setIcon(new ImageIcon(getClass().getResource("/editor/new_property_button.png")));
 			addPropButton.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
 					jPanel.add(getJTextField(), null);
@@ -738,6 +741,7 @@ public class P4Editor extends JFrame{
 			gridBagConstraints7.weightx = 1.0;
 			classPanel = new JPanel();
 			classPanel.setLayout(new GridBagLayout());
+			classPanel.setBackground(new Color(51, 51, 51));
 			classPanel.add(getClassList(), gridBagConstraints7);
 			classPanel.add(getClassButton(), gridBagConstraints8);
 		}
@@ -752,7 +756,8 @@ public class P4Editor extends JFrame{
 	private JButton getClassButton() {
 		if (classButton == null) {
 			classButton = new JButton();
-			classButton.setText("New Class");
+			classButton.setBorderPainted(false);
+			classButton.setIcon(new ImageIcon(getClass().getResource("/editor/new_class_button.png")));
 			classButton.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
 					DefaultListModel listModel = (DefaultListModel)classList.getModel();
@@ -799,7 +804,9 @@ public class P4Editor extends JFrame{
 	private JButton getRunOnceWindow() {
 		if (runOnceWindow == null) {
 			runOnceWindow = new JButton();
-			runOnceWindow.setText("Run Once");
+			runOnceWindow.setIcon(new ImageIcon(getClass().getResource("/editor/run_once_button.png")));
+			runOnceWindow.setBorderPainted(false);
+			runOnceWindow.setPreferredSize(new Dimension(120, 20));
 			runOnceWindow.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
 					p4m.caretEvent(new Point(0,0));
