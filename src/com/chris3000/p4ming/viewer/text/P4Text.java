@@ -277,12 +277,12 @@ public class P4Text {
 	}
 
 	public void addText(Point atLoc,String text){
-		p.println("BEGIN!! text is "+getText()+" lines.size="+lines.size());
+		//p.println("BEGIN!! text is "+getText()+" lines.size="+lines.size());
 		String[] newLines = text.split(crStr,-1);//-1 = include trailing enters
 		boolean crOnly = false;
 		if (newLines.length==2){
 			if (newLines[0].isEmpty() && newLines[1].isEmpty()){//cr only
-				System.out.println("CR!");
+			//	System.out.println("CR!");
 				P4TextLine line = lines.get(cursor.y);
 				//get the remainder of chars, if any
 				String remainder = line.remove(cursor.x, line.length);
@@ -294,32 +294,32 @@ public class P4Text {
 		if (!crOnly){
 		for (int i = 0; i < newLines.length; i++) {
 			String thisLine = newLines[i];
-			p.println("This line="+thisLine+".  lines.size="+lines.size());
+		//	p.println("This line="+thisLine+".  lines.size="+lines.size());
 			if (!thisLine.isEmpty()){
 				if(atLoc.y+i==lines.size()){
-					p.println("adding new line for line "+i+", thisLine="+thisLine);
+				//	p.println("adding new line for line "+i+", thisLine="+thisLine);
 					lines.add(new P4TextLine());
 				}
 				P4TextLine line = lines.get(atLoc.y+i);
 			if(i==0){ //firstline
-				p.println("adding first line which is "+thisLine+" lines.size="+lines.size());
+			//	p.println("adding first line which is "+thisLine+" lines.size="+lines.size());
 				line.add(thisLine, atLoc.x);
 			} else if (i == newLines.length-1){ //last line
-				p.println("adding last line which is "+thisLine);
+				//p.println("adding last line which is "+thisLine);
 				line.add(thisLine, 0);
 			} else { // middle line
-				p.println("adding new line with text "+thisLine);
+				//p.println("adding new line with text "+thisLine);
 				lines.add(atLoc.y+i,new P4TextLine(thisLine));
 			}
 			} else { //just cr
-				p.println("I think this line is just a cr.  thisLine="+thisLine);
+				//p.println("I think this line is just a cr.  thisLine="+thisLine);
 				lines.add(new P4TextLine());
 			}
 		}
 		}
 		calcTargetScale();
 		cursor.blinkOn();
-		p.println("END!! text is "+getText()+" lines.size="+lines.size());
+		//p.println("END!! text is "+getText()+" lines.size="+lines.size());
 	}
 	
 	/** add new character, delete character, make new line, or move cursor */
@@ -341,7 +341,7 @@ public class P4Text {
 			} 
 		} else {
 			if (key == cr){
-				System.out.println("CR!");
+				//System.out.println("CR!");
 				P4TextLine line = lines.get(cursor.y);
 				//get the remainder of chars, if any
 				String remainder = line.remove(cursor.x, line.length);
