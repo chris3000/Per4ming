@@ -5,27 +5,23 @@ import com.chris3000.p4ming.viewer.text.P4Text;
 
 import ddf.minim.AudioInput;
 import ddf.minim.Minim;
-//wtf are these?
-//import com.sun.corba.se.impl.protocol.giopmsgheaders.Message;
-//import com.sun.org.apache.bcel.internal.generic.RETURN;
-//import com.sun.tools.jdi.JDWP.StackFrame.ThisObject;
 
 import java.awt.Point
 import processing.core.PApplet
 import processing.core.PImage
 
 class P4Applet extends PApplet{
+	//using binding for added properties.  Kind of a hack?  rather use metaclass.
 	Binding binding = new Binding([:]);
 	GroovyShell shell = new GroovyShell(binding);
 	GroovyClassLoader gcl = new GroovyClassLoader();
 	def queue = [] as LinkedList;
-	//holder for added properties.  Kind of a hack?  rather use metaclass.
-	private def internal_properties = Collections.synchronizedMap([:]);
+	//private def internal_properties = Collections.synchronizedMap([:]);
 	private def internal_classes=Collections.synchronizedMap([:]);
 	private int internal_framerate = 10;
 	private float[] internal_bg = new float[3];
 	private boolean internal_opengl=false;
-
+	private int matrixStackDepth; //check to make sure that matrix depth is 0 before rendering text
 	P4Applet p = null;
 	//audio
 	Minim minim;
@@ -91,7 +87,7 @@ class P4Applet extends PApplet{
 	}
 
 	private void initText(){
-		P4Text.p = this;
+		P4Text.p = p;
 		p4text = new P4Text();
 		p4text.init();
 	}
@@ -149,6 +145,7 @@ class P4Applet extends PApplet{
 	def makeClass = {className, classText->
 		Class clz = gcl.parseClass(classText);
 		String simpleName=clz.getSimpleName();
+		clz.p = p;
 		internal_classes.put( clz.getSimpleName(), clz)
 		this.metaClass."new${simpleName}"= {Object[] args, String key="${simpleName}"->
 			Class clz2 =internal_classes.get(key);
@@ -186,6 +183,25 @@ class P4Applet extends PApplet{
 		//println(dot.toString()+"  "+mark.toString())
 	}
 
+/*	public void setup(){
+		size(800,600,P3D);
+		frameRate(30);
+		noStroke();
+		p4aInit=true;
+	}
+	
+	public void draw() {
+		background(0);
+		//code goes here
+		for (int y = 0; y < 100; y++) {
+			for (int x = 0; x < 100; x++) {
+				ellipse(x*8,y*6,random(20),random(10));
+				//pushMatrix();
+			}
+		}
+		println((int)frameRate);
+	}*/
+	
 	public void draw () {
 		//println(queue.size())
 		while (!queue.isEmpty()){
@@ -213,13 +229,22 @@ class P4Applet extends PApplet{
 			audioLevel=this."${audioInputName}".mix.level();
 		}
 		internal_gdraw();
+		checkMatrix();
 		if (showText){
 			try{
 			p4text.calc();
 			p4text.render();
-			} catch(Exception e){
+			} catch (java.lang.RuntimeException e1){
+				String int_msg = e1.getMessage();
+				println(int_msg);
+				if (int_msg.endsWith ("pushMatrix().")){
+					println("running popMatrix() 32 times");
+					32.times {
+						popMatrix();
+						 }
+				}
+			}catch(Exception e){
 				e.printStackTrace();
-				
 			}
 		}
 	}
@@ -242,11 +267,46 @@ class P4Applet extends PApplet{
 	}
 	
 	public void setup () {
+		p=this;
 		errorSign = loadImage("internal_assets/error_x.png");
 		gsetup()
 		initText();
-		p=this;
 		//binding.setMetaClass(this.getMetaClass());
 		p4aInit = true;
+	}
+	
+
+	private void checkMatrix(){
+		if(matrixStackDepth != 0){
+			println("matrix is off by "+matrixStackDepth);
+			if (matrixStackDepth > 0){//too many pushMatrix
+				matrixStackDepth.abs().times {
+					if (recorder != null) recorder.popMatrix();
+					matrixStackDepth--;
+				}
+			} else {
+				matrixStackDepth.abs().times { //too many popMatrix
+					if (recorder != null) recorder.pushMatrix();
+					matrixStackDepth++;
+				}
+			}
+		}
+	}
+	//********* fix the double bug!
+	
+	public float random(Double num){
+		return (float)random(num);
+	}
+	
+	public float random(){
+		return random(1f);
+	}
+	
+	public void rect(Double xx, Double xy, Double w, Double h){
+		rect((float)xx, (float)xy, (float)w, (float)h);
+	}
+	
+	public void ellipse(Double xx, Double xy, Double w, Double h){
+		ellipse((float)xx, (float)xy, (float)w, (float)h);
 	}
 }

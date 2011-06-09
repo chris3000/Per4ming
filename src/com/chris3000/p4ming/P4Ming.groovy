@@ -16,7 +16,7 @@ class P4Ming {
 		}
 	}
 	
-	public void startViewer(int[] sz, int frameRate, float[] bgColor,boolean openGL, boolean fullScreen){
+/*	public void startViewer(int[] sz, int frameRate, float[] bgColor,boolean openGL, boolean fullScreen){
 		if (p4v == null){
 			p4v = new P4Viewer(this);
 			p4v.start(sz, frameRate, bgColor, openGL, fullScreen);
@@ -28,14 +28,22 @@ class P4Ming {
 			p4v = new P4Viewer(this);
 			p4v.start(sz, frameRate, bgColor, openGL, fullScreen, lineInName, chanType, bufferSize, sampleRate, bitDepth);
 		}
+	}*/
+	
+	public void startViewer(P4Prefs p4p){
+		if (p4v == null){
+			p4v = new P4Viewer(this);
+			p4v.start(p4p);
+		}
 	}
+		
 	public void keyPressed(char c){
 		if (p4v != null){
 			p4v.keyPressed(c);
 		}
 	}
 	
-	public void removeText(Point fromLoc,int amount){
+	public void removeText(Point fromLoc, int amount){
 		if (p4v != null){
 			p4v.removeText(fromLoc, amount);
 		}
@@ -107,9 +115,19 @@ class P4Ming {
 			p4v.setText(text);
 		}
 	}
+	
 	public static void main(String[] args){
 		//put menu bar at top of screen and not on the app.
 		System.setProperty ("apple.laf.useScreenMenuBar", "true");
+		System.setProperty ("sun.java2d.d3d", "false");
+		System.setProperty ("sun.java2d.ddoffscreen", "false");
+		System.setProperty ("sun.java2d.noddraw", "false");
+		System.setProperty ("apple.awt.fakefullscreen","true");
+		System.setProperty ("apple.awt.fullscreencapturealldisplays", "false");
+		System.setProperty ("apple.awt.graphics.UseQuartz", "true");
+		//System.setProperty ("apple.awt.graphics.EnableDeferredUpdates", "true");
+		
+		
 		P4Ming p4m = new P4Ming();
 		p4m.start();
 	}

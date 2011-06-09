@@ -63,6 +63,10 @@ public class P4PrefsPane extends JFrame {
 	private JPanel savePanel = null;
 	private JButton saveButton = null;
 	private JButton cancelButton = null;
+	private JLabel softLabel = null;
+	private JCheckBox softCheck = null;
+	private JLabel primaryMonitorLabel = null;
+	private JCheckBox primaryMonitorCheck = null;
 	/**
 	 * @param owner
 	 */
@@ -138,13 +142,33 @@ public class P4PrefsPane extends JFrame {
 	 */
 	private JPanel getSetupPanel() {
 		if (setupPanel == null) {
+			GridBagConstraints gridBagConstraints41 = new GridBagConstraints();
+			gridBagConstraints41.gridx = 3;
+			gridBagConstraints41.gridy = 4;
+			GridBagConstraints gridBagConstraints31 = new GridBagConstraints();
+			gridBagConstraints31.gridx = 2;
+			gridBagConstraints31.anchor = GridBagConstraints.EAST;
+			gridBagConstraints31.gridy = 4;
+			primaryMonitorLabel = new JLabel();
+			primaryMonitorLabel.setText("Primary Monitor");
+			GridBagConstraints gridBagConstraints25 = new GridBagConstraints();
+			gridBagConstraints25.gridx = 1;
+			gridBagConstraints25.gridy = 4;
+			GridBagConstraints gridBagConstraints110 = new GridBagConstraints();
+			gridBagConstraints110.gridx = 0;
+			gridBagConstraints110.anchor = GridBagConstraints.EAST;
+			gridBagConstraints110.fill = GridBagConstraints.BOTH;
+			gridBagConstraints110.gridy = 4;
+			softLabel = new JLabel();
+			softLabel.setText("Soft FullScreen");
+			softLabel.setHorizontalAlignment(SwingConstants.RIGHT);
 			GridBagConstraints gridBagConstraints12 = new GridBagConstraints();
 			gridBagConstraints12.gridx = 0;
 			gridBagConstraints12.gridwidth = 4;
 			gridBagConstraints12.gridheight = 2;
 			gridBagConstraints12.anchor = GridBagConstraints.SOUTH;
 			gridBagConstraints12.fill = GridBagConstraints.BOTH;
-			gridBagConstraints12.gridy = 4;
+			gridBagConstraints12.gridy = 6;
 			warning = new JLabel();
 			warning.setText("Don't change these settings for now!");
 			GridBagConstraints gridBagConstraints11 = new GridBagConstraints();
@@ -233,6 +257,10 @@ public class P4PrefsPane extends JFrame {
 			setupPanel.add(fullScreenLabel, gridBagConstraints10);
 			setupPanel.add(getFullScreenButton(), gridBagConstraints11);
 			setupPanel.add(warning, gridBagConstraints12);
+			setupPanel.add(softLabel, gridBagConstraints110);
+			setupPanel.add(getSoftCheck(), gridBagConstraints25);
+			setupPanel.add(primaryMonitorLabel, gridBagConstraints31);
+			setupPanel.add(getPrimaryMonitorCheck(), gridBagConstraints41);
 		}
 		return setupPanel;
 	}
@@ -540,6 +568,8 @@ public class P4PrefsPane extends JFrame {
 					}
 					p4prefs.size = sz;
 					p4prefs.openGL = openGLCheck.isSelected();
+					p4prefs.softFullScreen = softCheck.isSelected();
+					p4prefs.primaryMonitor = primaryMonitorCheck.isSelected();
 					p4prefs.frameRate = Integer.parseInt(frameRateField.getText());
 					String[] bgStr = bgField.getText().split(",");
 					float[] bg = new float[3];
@@ -581,6 +611,30 @@ public class P4PrefsPane extends JFrame {
 			});
 		}
 		return cancelButton;
+	}
+	/**
+	 * This method initializes softCheck	
+	 * 	
+	 * @return javax.swing.JCheckBox	
+	 */
+	private JCheckBox getSoftCheck() {
+		if (softCheck == null) {
+			softCheck = new JCheckBox();
+			softCheck.setSelected(p4prefs.softFullScreen);
+		}
+		return softCheck;
+	}
+	/**
+	 * This method initializes primaryMonitorCheck	
+	 * 	
+	 * @return javax.swing.JCheckBox	
+	 */
+	private JCheckBox getPrimaryMonitorCheck() {
+		if (primaryMonitorCheck == null) {
+			primaryMonitorCheck = new JCheckBox();
+			primaryMonitorCheck.setSelected(p4prefs.primaryMonitor);
+		}
+		return primaryMonitorCheck;
 	}
 
 }

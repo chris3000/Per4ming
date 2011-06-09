@@ -14,12 +14,19 @@ public class P4Prefs {
 	private String filePath = System.getProperty("user.home")+System.getProperty("file.separator")+"p4ming.conf";
 	private boolean hasPrefsFile=false;
 	private PropertiesConfiguration config = null;
+	
+	//editor
+	public int[] editorLoc = new int[2];
+	public int[] editorSize = new int[2];
+	
 	//setup
 	public int[] size = new int[2];
 	public int frameRate=-1;
 	public float[] bgColor = new float[3];
 	public boolean openGL = false;
+	public boolean primaryMonitor = true;
 	public boolean fullScreen = false;
+	public boolean softFullScreen = false;
 	
 	//audio
 	public boolean audioEnabled=false;

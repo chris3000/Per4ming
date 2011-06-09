@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Insets;
 import java.awt.Point;
 
+import javax.swing.AbstractAction;
 import javax.swing.DefaultListModel;
 import javax.swing.JPanel;
 import javax.swing.JFrame;
@@ -24,6 +25,8 @@ import javax.swing.event.CaretListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import javax.swing.text.JTextComponent;
 
 import com.chris3000.p4ming.P4Ming;
 import com.chris3000.p4ming.P4Prefs;
@@ -32,6 +35,8 @@ import com.chris3000.p4ming.editor.project.P4Class;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.Font;
@@ -59,9 +64,13 @@ import java.awt.GridLayout;
 
 public class P4Editor extends JFrame{
 	JTextField activePropField = null;
+	String propFieldPreviousText = null;
+	ArrayList<String> runOncePreviousText = new ArrayList<String>();  //  @jve:decl-index=0:
 	P4Class activeTextArea = null;
 	private P4Prefs p4p = new P4Prefs(); //  @jve:decl-index=0:
-	private KeyStroke ctrlEnter = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, ActionEvent.CTRL_MASK);  //  @jve:decl-index=0:
+	private P4Editor p4e = null;  //this instance
+	private KeyStroke altEnter = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, ActionEvent.ALT_MASK);  //  @jve:decl-index=0:
+	private KeyStroke enter = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0);  //  @jve:decl-index=0:
 	private boolean started = false;
 	private static final long serialVersionUID = 1L;
 	private JPanel jContentPane = null;
@@ -90,6 +99,7 @@ public class P4Editor extends JFrame{
 	private JTextField jTextField = null;
 	private JPanel classPanel = null;
 	private JButton classButton = null;
+	private JButton runOnceWindow = null;
 	/**
 	 * This is the default constructor
 	 */
@@ -123,7 +133,10 @@ public class P4Editor extends JFrame{
 	 * @return void
 	 */
 	private void initialize() {
-		this.setSize(654, 445);
+		p4e = this;
+		this.setSize(p4p.editorSize[0], p4p.editorSize[1]);
+		this.setSize(650,470);
+		this.setLocation(p4p.editorLoc[0], p4p.editorLoc[1]);
 		this.setBackground(new Color(51, 51, 51));
 		this.setJMenuBar(getJmenuBar());
 		this.setContentPane(getJContentPane());
@@ -134,8 +147,22 @@ public class P4Editor extends JFrame{
 				System.exit(0);
 			}
 		});
+		this.addComponentListener(new java.awt.event.ComponentAdapter() {
+			public void componentMoved(java.awt.event.ComponentEvent e) {
+				//System.out.println("componentMoved()"); // TODO Auto-generated Event stub componentMoved()
+				JFrame self = getSelf();
+				Point screenLoc = self.getLocationOnScreen();
+				p4p.editorLoc[0] = screenLoc.x;
+				p4p.editorLoc[1] =screenLoc.y;
+				p4p.editorSize[0] = self.getSize().width;
+				p4p.editorSize[1] =self.getSize().height;
+				p4p.savePrefs();
+			}
+		});
 	}
-
+	private JFrame getSelf(){
+		return this;
+	}
 	/**
 	 * This method initializes jContentPane
 	 * 
@@ -171,92 +198,30 @@ public class P4Editor extends JFrame{
 	 * @return javax.swing.JTextArea	
 	 */
 	private P4Class createClass(String name) {
-			P4Class editorTextArea = new P4Class();
-			//editorTextArea = new JEditTextArea(new processing.app.syntax.TextAreaDefaults());
-			editorTextArea.setMargin(new Insets(2,6,2,6));
-			editorTextArea.setFont(new Font("Monaco", Font.PLAIN, 12));
-			editorTextArea.setTabSize(3);
-			editorTextArea.setWrapStyleWord(true);
-			if (name != null){
-				if (name.equals("main")){
-					editorTextArea.setText("def draw1 = {->\n\t//code goes here\n\t//ellipse(200,200,random(20),random(10));\n}");
-				} else {
-					editorTextArea.setText("class "+name+" {\n\t//code goes here\n}\n");
-				}
-				editorTextArea.setName(name);
+		P4Class editorTextArea = new P4Class();
+		//editorTextArea = new JEditTextArea(new processing.app.syntax.TextAreaDefaults());
+		editorTextArea.setMargin(new Insets(2,6,2,6));
+		editorTextArea.setFont(new Font("Monaco", Font.PLAIN, 12));
+		editorTextArea.setTabSize(3);
+		editorTextArea.setWrapStyleWord(true);
+		if (name != null){
+			if (name.equals("main")){
+				editorTextArea.isMain = true;
+				editorTextArea.setText("def draw1 = {->\n\t//code goes here\n\t//ellipse(200,200,random(20),random(10));\n}");
+			} else {
+				editorTextArea.setText("import com.chris3000.p4ming.viewer.P4Core;\n\nclass "+name+" extends P4Core {\n\t//code goes here\n}\n");
+				editorTextArea.checkClassName(true);
 			}
-			editorTextArea.addCaretListener(new CaretListener() {
-				public void caretUpdate(CaretEvent caretEvent) {
-						int dot = caretEvent.getDot();
-						int mark = caretEvent.getMark();
-						System.out.println(""+dot+","+mark);
-						Point dotLoc = getDocXYLoc(activeTextArea,dot);
-						if(mark != dot){ //selection
-							Point markLoc = getDocXYLoc(activeTextArea,mark);
-							p4m.caretEvent(dotLoc,markLoc);
-						} else { 
-							p4m.caretEvent(dotLoc);
-						}
-					
-					// System.out.println("Dot: "+ caretEvent.getDot()+" Mark: "+caretEvent.getMark());
-
-				}
-			});
-			editorTextArea.addKeyListener(new KeyListener(){
-				@Override
-				public void keyPressed(KeyEvent e) {
-/*					char key = e.getKeyChar();
-					if (key >= ' ' || key =='\n'){  //space is the first visible char
-						if(!e.isControlDown() && !e.isMetaDown() && !e.isAltDown()){
-							p4m.keyPressed(e.getKeyChar());
-						}
-					}*/
-				}
-
-				@Override
-				public void keyReleased(KeyEvent e) {}
-				@Override
-				public void keyTyped(KeyEvent e) {
-					// TODO Auto-generated method stub
-
-				}
-			});
-			editorTextArea.addFocusListener(new java.awt.event.FocusAdapter() {
-				public void focusGained(java.awt.event.FocusEvent e) {
-					//System.out.println("focusGained()"); // TODO Auto-generated Event stub focusGained()
-					getCurrentText();
-				}
-			});
-		editorTextArea.getDocument().addDocumentListener(new DocumentListener(){
-
-				@Override
-				public void changedUpdate(DocumentEvent e) {
-					System.out.println("doc change!"+e.toString());
-					System.out.println("length="+e.getLength()+", offset="+e.getOffset()+", type="+e.getType());
-				}
-
-				@Override
-				public void insertUpdate(DocumentEvent e) {
-					System.out.println("doc insert!"+e.toString());
-					System.out.println("length="+e.getLength()+", offset="+e.getOffset()+", type="+e.getType());
-					String changedText = null;
-					try {
-						changedText = e.getDocument().getText(e.getOffset(), e.getLength());
-					} catch (BadLocationException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					}
-					Point addLoc = getDocXYLoc(activeTextArea,e.getOffset());
-					p4m.addText(addLoc, changedText);
-				}
-
-				@Override
-				public void removeUpdate(DocumentEvent e) {
-					//System.out.println("length="+e.getLength()+", offset="+e.getOffset()+", type="+e.getType());
-					Point removeLoc = getDocXYLoc(activeTextArea,e.getOffset());
-					p4m.removeText(removeLoc,e.getLength());
-				}	
-			});
+			editorTextArea.setName(name);
+		}
+		editorTextArea.addCaretListener(new CaretLoc(CaretLoc.AREA));
+		editorTextArea.addFocusListener(new FocusListen(editorTextArea.getDocument()));
+		editorTextArea.getDocument().addDocumentListener(new DocListener());
+		//editorTextArea.addKeyListener(new CodeKeyListener());
+		editorTextArea.getInputMap().put(enter, "enter");
+		editorTextArea.getActionMap().put("enter", new EnterAction(editorTextArea));
+		editorTextArea.getInputMap().put(altEnter, "submitText");
+		editorTextArea.getActionMap().put("submitText", new SubmitTextAction(editorTextArea));
 		return editorTextArea;
 	}
 
@@ -271,11 +236,14 @@ public class P4Editor extends JFrame{
 		}
 		return loc;
 	}
-	
+
 	public void getCurrentText(){
 		p4m.setText(activeTextArea.getText());
 	}
 
+	public void getCurrentText(String text){
+		p4m.setText(text);
+	}
 
 	/**
 	 * This method initializes controlPanel	
@@ -284,9 +252,14 @@ public class P4Editor extends JFrame{
 	 */
 	private JPanel getControlPanel() {
 		if (controlPanel == null) {
+			GridBagConstraints gridBagConstraints11 = new GridBagConstraints();
+			gridBagConstraints11.gridx = 2;
+			gridBagConstraints11.weightx = 1.0D;
+			gridBagConstraints11.anchor = GridBagConstraints.EAST;
+			gridBagConstraints11.gridy = 0;
 			GridBagConstraints gridBagConstraints1 = new GridBagConstraints();
 			gridBagConstraints1.anchor = GridBagConstraints.WEST;
-			gridBagConstraints1.weightx = 1.0;
+			gridBagConstraints1.weightx = 0.0D;
 			gridBagConstraints1.gridheight = 2;
 			gridBagConstraints1.ipady = 6;
 			gridBagConstraints1.ipadx = 6;
@@ -300,6 +273,7 @@ public class P4Editor extends JFrame{
 			controlPanel.setBackground(new Color(51, 51, 51));
 			controlPanel.add(getStartStopButton(), gridBagConstraints);
 			controlPanel.add(getSubmitButton(), gridBagConstraints1);
+			controlPanel.add(getRunOnceWindow(), gridBagConstraints11);
 		}
 		return controlPanel;
 	}
@@ -322,12 +296,7 @@ public class P4Editor extends JFrame{
 				if (!started){
 					startStopButton.setIcon(new ImageIcon(getClass().getResource("/editor/stop_button.png")));
 					//p4m.startViewer(w, h);
-					if (p4p.audioEnabled){
-						p4m.startViewer(p4p.size, p4p.frameRate, p4p.bgColor,p4p.openGL, p4p.fullScreen,
-								p4p.lineInName, p4p.channelType, p4p.bufferSize, p4p.sampleRate, p4p.bitDepth);
-					} else {
-						p4m.startViewer(p4p.size, p4p.frameRate, p4p.bgColor,p4p.openGL, p4p.fullScreen);
-					}
+						p4m.startViewer(p4p);
 					started = true;
 				} else {
 					startStopButton.setIcon(new ImageIcon(getClass().getResource("/editor/start_button.png")));
@@ -361,16 +330,27 @@ public class P4Editor extends JFrame{
 		return submitButton;
 	}
 
-	private void submitProperty(String text) {
+	void submitRunOnce(String text) {
+		if (started){
+			P4Message p4mess = new P4Message(null, text, P4Message.RUN_ONCE);
+			p4m.addMethod(p4mess);
+		}
+	}
+
+	void submitProperty(String text) {
 		if (started){
 			//String text = propertyField.getText();
 			String[] nameValue = text.split("=");
 			if(nameValue.length == 2){
-				P4Message p4mess = new P4Message(nameValue[0].trim(), nameValue[1].trim(), P4Message.PROPERTY);
+				P4Message p4mess = null;
+				if (nameValue[0].contains(".")){ //it's setting an instance property.
+					submitRunOnce(text);
+				} else {
+					p4mess = new P4Message(nameValue[0].trim(), nameValue[1].trim(), P4Message.PROPERTY);
+				}
 				p4m.addMethod(p4mess);
 			} else if (nameValue.length == 1){
-				P4Message p4mess = new P4Message(null, nameValue[0].trim(), P4Message.RUN_ONCE);
-				p4m.addMethod(p4mess);
+				submitRunOnce(nameValue[0].trim());
 			}
 		}
 	}
@@ -428,7 +408,7 @@ public class P4Editor extends JFrame{
 		if (submitMethod == null) {
 			submitMethod = new JMenuItem();
 			submitMethod.setText("Submit Method");
-			submitMethod.setAccelerator(ctrlEnter);
+			//submitMethod.setAccelerator(ctrlEnter);
 			submitMethod.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
 					if(activeTextArea.toString().equals("main")){
@@ -443,350 +423,603 @@ public class P4Editor extends JFrame{
 		return submitMethod;
 	}
 
-	private void submitMethods(String methods) {
+	void submitMethods(String methods) {
 		if (started){
 			P4Message[] p4mess = parseMethods(methods);
 			p4m.addMethods(p4mess);
 		}
 	}
-	
-	private void submitClass(String classStr) {
+
+	void submitClass(String classStr) {
 		if (started){
 			p4m.addClass(new P4Message(null, classStr,P4Message.CLASS));
 		}
 	}
-		private P4Message[] parseMethods(String methods){
-			ArrayList<P4Message> p4ms = new ArrayList<P4Message>();
-			P4Message[] p4mArray = null;
-			char[] chars = methods.toCharArray();
-			int begin=0;
-			int end = 0;
-			int braceCount=0;
-			boolean inBlock=false;
-			for (int i = 0; i < chars.length; i++) {
-				if(chars[i]=='{'){
-					braceCount++;
-					if(!inBlock)begin=i;
-					inBlock=true;
-				} else if (chars[i]=='}'){
-					braceCount--;
-					if (braceCount==0){//end of block
-						end=i+1;
-						String methodStr = methods.substring(begin, end);
-						int eqIndex = methods.lastIndexOf("=", begin);
-						int defIndex = methods.lastIndexOf("def", eqIndex)+3;
-						String methodName=methods.substring(defIndex, eqIndex).trim();
-						p4ms.add(new P4Message(methodName, methodStr, P4Message.METHOD));
-						inBlock=false;
-						//System.out.println("name: "+methodName+" method: "+methodStr);
-					}
+	private P4Message[] parseMethods(String methods){
+		ArrayList<P4Message> p4ms = new ArrayList<P4Message>();
+		P4Message[] p4mArray = null;
+		char[] chars = methods.toCharArray();
+		int begin=0;
+		int end = 0;
+		int braceCount=0;
+		boolean inBlock=false;
+		for (int i = 0; i < chars.length; i++) {
+			if(chars[i]=='{'){
+				braceCount++;
+				if(!inBlock)begin=i;
+				inBlock=true;
+			} else if (chars[i]=='}'){
+				braceCount--;
+				if (braceCount==0){//end of block
+					end=i+1;
+					String methodStr = methods.substring(begin, end);
+					int eqIndex = methods.lastIndexOf("=", begin);
+					int defIndex = methods.lastIndexOf("def", eqIndex)+3;
+					String methodName=methods.substring(defIndex, eqIndex).trim();
+					p4ms.add(new P4Message(methodName, methodStr, P4Message.METHOD));
+					inBlock=false;
+					//System.out.println("name: "+methodName+" method: "+methodStr);
 				}
 			}
-			p4mArray = new P4Message[p4ms.size()];
-			p4ms.toArray(p4mArray);
-//			for (int i = 0; i < p4mArray.length; i++) {System.out.println(p4mArray[i].toString());}
-			return p4mArray;
 		}
+		p4mArray = new P4Message[p4ms.size()];
+		p4ms.toArray(p4mArray);
+		//			for (int i = 0; i < p4mArray.length; i++) {System.out.println(p4mArray[i].toString());}
+		return p4mArray;
+	}
 
-		/**
-		 * This method initializes preferences	
-		 * 	
-		 * @return javax.swing.JMenuItem	
-		 */
-		private JMenuItem getPreferences() {
-			if (preferences == null) {
-				preferences = new JMenuItem();
-				preferences.setText("Preferences");
-				preferences.addActionListener(new java.awt.event.ActionListener() {
-					public void actionPerformed(java.awt.event.ActionEvent e) {
-						if (p4Prefs == null || !p4Prefs.isDisplayable()){
-							p4Prefs = new P4PrefsPane(p4p);
-							p4Prefs.setVisible(true);
-						} else {
-							p4Prefs.setFocusable(true);
-						}
-						System.out.println("actionPerformed()"); // TODO Auto-generated Event stub actionPerformed()
+	/**
+	 * This method initializes preferences	
+	 * 	
+	 * @return javax.swing.JMenuItem	
+	 */
+	private JMenuItem getPreferences() {
+		if (preferences == null) {
+			preferences = new JMenuItem();
+			preferences.setText("Preferences");
+			preferences.addActionListener(new java.awt.event.ActionListener() {
+				public void actionPerformed(java.awt.event.ActionEvent e) {
+					if (p4Prefs == null || !p4Prefs.isDisplayable()){
+						p4Prefs = new P4PrefsPane(p4p);
+						p4Prefs.setVisible(true);
+					} else {
+						p4Prefs.setFocusable(true);
 					}
-				});
-			}
-			return preferences;
+					System.out.println("actionPerformed()"); // TODO Auto-generated Event stub actionPerformed()
+				}
+			});
 		}
+		return preferences;
+	}
 
-		/**
-		 * This method initializes tabPane	
-		 * 	
-		 * @return javax.swing.JTabbedPane	
-		 */
-		private JTabbedPane getTabPane() {
-			if (tabPane == null) {
-				tabPane = new JTabbedPane();
-				tabPane.setBackground(new Color(51, 51, 51));
-				tabPane.addTab("1", null, getSplitPane1(), null);
-			}
-			return tabPane;
+	/**
+	 * This method initializes tabPane	
+	 * 	
+	 * @return javax.swing.JTabbedPane	
+	 */
+	private JTabbedPane getTabPane() {
+		if (tabPane == null) {
+			tabPane = new JTabbedPane();
+			tabPane.setBackground(new Color(51, 51, 51));
+			tabPane.addTab("1", null, getSplitPane1(), null);
 		}
+		return tabPane;
+	}
 
-		/**
-		 * This method initializes classList	
-		 * 	
-		 * @return javax.swing.JList	
-		 */
-		private JList getClassList() {
-			if (classList == null) {
-				DefaultListModel classListModel = new DefaultListModel();
-				//classListModel.setSize(1);
-				activeTextArea = createClass("main");
-				classListModel.addElement(activeTextArea);
-				classList = new JList(classListModel);
-				//classList.set
-				classList.setPreferredSize(new Dimension(80, 80));
-				classList.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
-				classList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-				classList.setFont(new Font("Monaco", Font.PLAIN, 12));
-				classList.setSelectedIndex(0);
-				classList.setModel(classListModel);
-				classList.setBackground(new Color(237, 243, 254));
-				classList
-						.addListSelectionListener(new javax.swing.event.ListSelectionListener() {
-							public void valueChanged(javax.swing.event.ListSelectionEvent e) {
-								if (classList.getSelectedIndex()>-1){
-									activeTextArea = (P4Class) classList.getSelectedValue();
-									setEditorPaneView(activeTextArea);
-									getCurrentText();
-									System.out.println("valueChanged() "+System.currentTimeMillis()); // TODO Auto-generated Event stub valueChanged()
+	/**
+	 * This method initializes classList	
+	 * 	
+	 * @return javax.swing.JList	
+	 */
+	private JList getClassList() {
+		if (classList == null) {
+			DefaultListModel classListModel = new DefaultListModel();
+			//classListModel.setSize(1);
+			activeTextArea = createClass("main");
+			classListModel.addElement(activeTextArea);
+			classList = new JList(classListModel);
+			//classList.set
+			classList.setPreferredSize(new Dimension(80, 80));
+			classList.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+			classList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+			classList.setFont(new Font("Monaco", Font.PLAIN, 12));
+			classList.setSelectedIndex(0);
+			classList.setModel(classListModel);
+			classList.setBackground(new Color(237, 243, 254));
+			classList
+			.addListSelectionListener(new javax.swing.event.ListSelectionListener() {
+				public void valueChanged(javax.swing.event.ListSelectionEvent e) {
+					if (classList.getSelectedIndex()>-1){
+						activeTextArea = (P4Class) classList.getSelectedValue();
+						setEditorPaneView(activeTextArea);
+						getCurrentText();
+						System.out.println("valueChanged() "+System.currentTimeMillis()); // TODO Auto-generated Event stub valueChanged()
 
-								}
-							}
-						});
+					}
+				}
+			});
+		}
+		return classList;
+	}
+
+	/**
+	 * This method initializes splitPane1	
+	 * 	
+	 * @return javax.swing.JSplitPane	
+	 */
+	private JSplitPane getSplitPane1() {
+		if (splitPane1 == null) {
+			splitPane1 = new JSplitPane();
+			splitPane1.setContinuousLayout(true);
+			splitPane1.setBackground(new Color(102, 102, 102));
+			splitPane1.setLeftComponent(getClassPanel());
+			splitPane1.setRightComponent(getProjectPane());
+		}
+		return splitPane1;
+	}
+
+	/**
+	 * This method initializes newClass	
+	 * 	
+	 * @return javax.swing.JMenuItem	
+	 */
+	private JMenuItem getNewClass() {
+		if (newClass == null) {
+			newClass = new JMenuItem();
+			newClass.setText("New Class");
+			newClass.addActionListener(new java.awt.event.ActionListener() {
+				public void actionPerformed(java.awt.event.ActionEvent e) {
+					DefaultListModel classListModel = (DefaultListModel) classList.getModel();
+					classListModel.setSize(classListModel.getSize()+1);
+					classListModel.addElement("New Class");
+					System.out.println("actionPerformed()"); // TODO Auto-generated Event stub actionPerformed()
+				}
+			});
+		}
+		return newClass;
+	}
+
+	/**
+	 * This method initializes projectPane	
+	 * 	
+	 * @return javax.swing.JSplitPane	
+	 */
+	private JSplitPane getProjectPane() {
+		if (projectPane == null) {
+			projectPane = new JSplitPane();
+			projectPane.setBackground(new Color(102, 102, 102));
+			projectPane.setContinuousLayout(true);
+			projectPane.setResizeWeight(1.0D);
+			projectPane.setLeftComponent(getEditorPane());
+			projectPane.setRightComponent(getPropsPanel());
+		}
+		return projectPane;
+	}
+
+	/**
+	 * This method initializes propsPanel	
+	 * 	
+	 * @return javax.swing.JPanel	
+	 */
+	private JPanel getPropsPanel() {
+		if (propsPanel == null) {
+			GridBagConstraints gridBagConstraints6 = new GridBagConstraints();
+			gridBagConstraints6.insets = new Insets(0, 0, 0, 0);
+			gridBagConstraints6.gridy = 1;
+			gridBagConstraints6.ipadx = 0;
+			gridBagConstraints6.fill = GridBagConstraints.BOTH;
+			gridBagConstraints6.anchor = GridBagConstraints.SOUTH;
+			gridBagConstraints6.gridx = 0;
+			GridBagConstraints gridBagConstraints5 = new GridBagConstraints();
+			gridBagConstraints5.fill = GridBagConstraints.BOTH;
+			gridBagConstraints5.gridy = 0;
+			gridBagConstraints5.ipadx = 116;
+			gridBagConstraints5.ipady = 156;
+			gridBagConstraints5.weightx = 1.0;
+			gridBagConstraints5.weighty = 1.0;
+			gridBagConstraints5.gridx = 0;
+			propsPanel = new JPanel();
+			propsPanel.setLayout(new GridBagLayout());
+			propsPanel.setPreferredSize(new Dimension(50, 39));
+			propsPanel.add(getPropsFieldContainer(), gridBagConstraints5);
+			propsPanel.add(getAddPropButton(), gridBagConstraints6);
+		}
+		return propsPanel;
+	}
+
+	/**
+	 * This method initializes addPropButton	
+	 * 	
+	 * @return javax.swing.JButton	
+	 */
+	private JButton getAddPropButton() {
+		if (addPropButton == null) {
+			addPropButton = new JButton();
+			addPropButton.setVerticalAlignment(SwingConstants.CENTER);
+			addPropButton.setHorizontalTextPosition(SwingConstants.CENTER);
+			addPropButton.setName("addPropButton");
+			addPropButton.setPreferredSize(new Dimension(200, 29));
+			addPropButton.setComponentOrientation(ComponentOrientation.UNKNOWN);
+			addPropButton.setText("New Property");
+			addPropButton.addActionListener(new java.awt.event.ActionListener() {
+				public void actionPerformed(java.awt.event.ActionEvent e) {
+					jPanel.add(getJTextField(), null);
+					jPanel.validate();
+					jPanel.repaint();
+					System.out.println("actionPerformed()"); // TODO Auto-generated Event stub actionPerformed()
+				}
+			});
+		}
+		return addPropButton;
+	}
+
+	/**
+	 * This method initializes propsFieldContainer	
+	 * 	
+	 * @return javax.swing.JScrollPane	
+	 */
+	private JScrollPane getPropsFieldContainer() {
+		if (propsFieldContainer == null) {
+			propsFieldContainer = new JScrollPane();
+			propsFieldContainer.setViewportView(getJPanel());
+		}
+		return propsFieldContainer;
+	}
+
+	/**
+	 * This method initializes jPanel	
+	 * 	
+	 * @return javax.swing.JPanel	
+	 */
+	private JPanel getJPanel() {
+		if (jPanel == null) {
+			jPanel = new JPanel();
+			jPanel.setLayout(new BoxLayout(getJPanel(), BoxLayout.Y_AXIS));
+			jPanel.setBackground(new Color(51, 51, 51));
+			jPanel.add(getJTextField(), null);
+		}
+		return jPanel;
+	}
+
+	/**
+	 * This method initializes jTextField	
+	 * 	
+	 * @return javax.swing.JTextField	
+	 */
+	private JTextField getJTextField() {
+		JTextField jTextField = new JTextField(2);
+		jTextField.setHorizontalAlignment(JTextField.LEFT);
+		jTextField.setPreferredSize(new Dimension(10, 28));
+		jTextField.setMaximumSize(new Dimension(900, 28));
+		jTextField.addCaretListener(new CaretLoc(CaretLoc.FIELD));
+		jTextField.addFocusListener(new FocusListen(jTextField.getDocument()));
+		jTextField.getDocument().addDocumentListener(new DocListener());
+		jTextField.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent evt) {
+				String propFieldText=activePropField.getText();
+				submitProperty(propFieldText);
+				propFieldPreviousText=propFieldText;
+				//System.out.println("Action performed!!");
 			}
-			return classList;
+		});
+		jTextField.addFocusListener(new java.awt.event.FocusAdapter() {   
+			public void focusLost(java.awt.event.FocusEvent e) {
+				String propFieldText = activePropField.getText();
+				if (!propFieldText.equals(propFieldPreviousText)){
+					submitProperty(activePropField.getText());
+				}
+				activePropField = null;
+				propFieldPreviousText=propFieldText;
+				//System.out.println("focusLost()"); // TODO Auto-generated Event stub focusLost()
+			}
+			public void focusGained(java.awt.event.FocusEvent e) {
+				activePropField = (JTextField)e.getSource();
+				//System.out.println("focusGained()"); // TODO Auto-generated Event stub focusGained()
+			}
+		});
+		return jTextField;
+	}
+
+	/**
+	 * This method initializes classPanel	
+	 * 	
+	 * @return javax.swing.JPanel	
+	 */
+	private JPanel getClassPanel() {
+		if (classPanel == null) {
+			GridBagConstraints gridBagConstraints8 = new GridBagConstraints();
+			gridBagConstraints8.gridx = 0;
+			gridBagConstraints8.fill = GridBagConstraints.HORIZONTAL;
+			gridBagConstraints8.anchor = GridBagConstraints.SOUTH;
+			gridBagConstraints8.gridy = 1;
+			GridBagConstraints gridBagConstraints7 = new GridBagConstraints();
+			gridBagConstraints7.fill = GridBagConstraints.BOTH;
+			gridBagConstraints7.weighty = 1.0;
+			gridBagConstraints7.weightx = 1.0;
+			classPanel = new JPanel();
+			classPanel.setLayout(new GridBagLayout());
+			classPanel.add(getClassList(), gridBagConstraints7);
+			classPanel.add(getClassButton(), gridBagConstraints8);
+		}
+		return classPanel;
+	}
+
+	/**
+	 * This method initializes classButton	
+	 * 	
+	 * @return javax.swing.JButton	
+	 */
+	private JButton getClassButton() {
+		if (classButton == null) {
+			classButton = new JButton();
+			classButton.setText("New Class");
+			classButton.addActionListener(new java.awt.event.ActionListener() {
+				public void actionPerformed(java.awt.event.ActionEvent e) {
+					DefaultListModel listModel = (DefaultListModel)classList.getModel();
+					int index = listModel.getSize();
+					activeTextArea = createClass("MyClass"+index);
+					listModel.addElement(activeTextArea);
+					classList.setSelectedIndex(index);
+					classList.revalidate();
+					classList.repaint();
+					setEditorPaneView(activeTextArea);
+					System.out.println("actionPerformed()"); // TODO Auto-generated Event stub actionPerformed()
+				}
+			});
+		}
+		return classButton;
+	}
+
+	private void setEditorPaneView(P4Class textArea) {
+		editorPane.setViewportView(textArea);
+		editorPane.revalidate();
+		editorPane.repaint();
+	}
+
+	private void checkClassName(int textLength) {
+		boolean force = false;
+		if (textLength>1){
+			force = true;
+		}
+		boolean nameChanged = activeTextArea.checkClassName(force);
+		if (nameChanged){
+			System.out.println("name changed to "+activeTextArea.getName());
+			//DefaultListModel listModel = (DefaultListModel)classList.getModel();
+			//listModel.indexOf(activeTextArea);
+			classList.revalidate();
+			classList.repaint();
+		}
+	}
+
+	/**
+	 * This method initializes runOnceWindow	
+	 * 	
+	 * @return javax.swing.JButton	
+	 */
+	private JButton getRunOnceWindow() {
+		if (runOnceWindow == null) {
+			runOnceWindow = new JButton();
+			runOnceWindow.setText("Run Once");
+			runOnceWindow.addActionListener(new java.awt.event.ActionListener() {
+				public void actionPerformed(java.awt.event.ActionEvent e) {
+					p4m.caretEvent(new Point(0,0));
+					P4RunOnce p4ro = new P4RunOnce(p4e);
+					Dimension d = p4ro.getSize();
+					p4ro.setLocation(p4p.editorLoc[0]+p4p.editorSize[0]/2-d.width/2, p4p.editorLoc[1]+p4p.editorSize[1]/2-d.height/2);
+					p4ro.setVisible(true);
+					//System.out.println("actionPerformed()"); // TODO Auto-generated Event stub actionPerformed()
+				}
+			});
+		}
+		return runOnceWindow;
+	}
+	class CaretLoc implements CaretListener {
+		
+		static final byte FIELD = 10;
+		static final byte AREA = 20;
+		byte textType = AREA;
+		
+		public CaretLoc(byte type){
+			textType=type;
 		}
 		
-		/**
-		 * This method initializes splitPane1	
-		 * 	
-		 * @return javax.swing.JSplitPane	
-		 */
-		private JSplitPane getSplitPane1() {
-			if (splitPane1 == null) {
-				splitPane1 = new JSplitPane();
-				splitPane1.setContinuousLayout(true);
-				splitPane1.setBackground(new Color(102, 102, 102));
-				splitPane1.setLeftComponent(getClassPanel());
-				splitPane1.setRightComponent(getProjectPane());
+		public void caretUpdate(CaretEvent caretEvent) {
+			int dot = caretEvent.getDot();
+			int mark = caretEvent.getMark();
+			System.out.println(""+dot+","+mark);
+			Point dotLoc = null;
+			if (textType == AREA){
+				dotLoc = getDocXYLoc(activeTextArea,dot);
+			} else if (textType==FIELD){
+				dotLoc = new Point(dot,0);
 			}
-			return splitPane1;
+			if(mark != dot){ //selection
+				Point markLoc = null;
+				if (textType==AREA){
+					markLoc= getDocXYLoc(activeTextArea,mark);
+				}else if (textType==FIELD){
+					markLoc = new Point(mark,0);
+				}
+				p4m.caretEvent(dotLoc,markLoc);
+			} else { 
+				p4m.caretEvent(dotLoc);
+			}
+
+			// System.out.println("Dot: "+ caretEvent.getDot()+" Mark: "+caretEvent.getMark());
+
+		}
+	}
+
+	class DocListener implements DocumentListener {
+		public void changedUpdate(DocumentEvent e) {
+			System.out.println("doc change!"+e.toString());
+			System.out.println("length="+e.getLength()+", offset="+e.getOffset()+", type="+e.getType());
 		}
 
-		/**
-		 * This method initializes newClass	
-		 * 	
-		 * @return javax.swing.JMenuItem	
-		 */
-		private JMenuItem getNewClass() {
-			if (newClass == null) {
-				newClass = new JMenuItem();
-				newClass.setText("New Class");
-				newClass.addActionListener(new java.awt.event.ActionListener() {
-					public void actionPerformed(java.awt.event.ActionEvent e) {
-						DefaultListModel classListModel = (DefaultListModel) classList.getModel();
-						classListModel.setSize(classListModel.getSize()+1);
-						classListModel.addElement("New Class");
-						System.out.println("actionPerformed()"); // TODO Auto-generated Event stub actionPerformed()
+		@Override
+		public void insertUpdate(DocumentEvent e) {
+			//System.out.println("doc insert!"+e.toString());
+			//System.out.println("length="+e.getLength()+", offset="+e.getOffset()+", type="+e.getType());
+			String changedText = null;
+			try {
+				changedText = e.getDocument().getText(e.getOffset(), e.getLength());
+				Point addLoc = getDocXYLoc(activeTextArea,e.getOffset());
+				checkClassName(e.getLength());
+				p4m.addText(addLoc, changedText);
+			} catch (BadLocationException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		}
+
+		@Override
+		public void removeUpdate(DocumentEvent e) {
+			//System.out.println("length="+e.getLength()+", offset="+e.getOffset()+", type="+e.getType());
+			Point removeLoc = getDocXYLoc(activeTextArea,e.getOffset());
+			checkClassName(e.getLength());
+			p4m.removeText(removeLoc,e.getLength());
+		}	
+	}
+
+	class FocusListen implements java.awt.event.FocusListener{
+
+		Document doc = null;
+		public FocusListen(Document doc){
+			this.doc = doc;
+		}
+		public void focusGained(java.awt.event.FocusEvent e) {
+			System.out.println("focusGained()"); // TODO Auto-generated Event stub focusGained()
+			try {
+				getCurrentText(doc.getText(doc.getStartPosition().getOffset(), doc.getEndPosition().getOffset()));
+			} catch (BadLocationException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		}
+
+		@Override
+		public void focusLost(FocusEvent e) {
+			// TODO Auto-generated method stub
+
+		}
+
+	}
+	
+	class CodeKeyListener extends KeyAdapter {
+		public void keyTyped(KeyEvent evt) {
+			JTextComponent c = (JTextComponent) evt.getSource();
+			char ch = evt.getKeyChar();
+			try {
+				if (ch == '\n' || ch == '\t') {
+					int caretPos = c.getCaretPosition();
+					if (caretPos > 1){
+						Document doc =c.getDocument();
+						if(ch=='\n'){
+							String lastChar = doc.getText(caretPos-2, 1);
+							System.out.println("ENTER- last char was "+lastChar);
+							if (lastChar.equals("{")){
+								//check to see if it's a class
+								int line = ((JTextArea) c).getLineOfOffset(caretPos-1);
+								int lineOffset = (caretPos-1)-((JTextArea) c).getLineStartOffset(line);
+								String lineStr = c.getText(((JTextArea) c).getLineStartOffset(line), lineOffset);
+								System.out.println("caretPos="+caretPos+" line="+line+" lineOffset="+lineOffset+" lineStr="+lineStr);
+								if (lineStr.contains("class")|| lineStr.contains(".times") || lineStr.contains(".each")){
+									doc.insertString(caretPos-1, "\n\t\n}", null);
+									
+								} else {
+									doc.insertString(caretPos-1, " ->\n\t\n}", null);
+								}
+								c.setCaretPosition(c.getCaretPosition()-3);
+								//evt.consume();
+							}
+						}
 					}
-				});
-			}
-			return newClass;
-		}
+				} 
 
-		/**
-		 * This method initializes projectPane	
-		 * 	
-		 * @return javax.swing.JSplitPane	
-		 */
-		private JSplitPane getProjectPane() {
-			if (projectPane == null) {
-				projectPane = new JSplitPane();
-				projectPane.setBackground(new Color(102, 102, 102));
-				projectPane.setContinuousLayout(true);
-				projectPane.setResizeWeight(1.0D);
-				projectPane.setLeftComponent(getEditorPane());
-				projectPane.setRightComponent(getPropsPanel());
-			}
-			return projectPane;
-		}
 
-		/**
-		 * This method initializes propsPanel	
-		 * 	
-		 * @return javax.swing.JPanel	
-		 */
-		private JPanel getPropsPanel() {
-			if (propsPanel == null) {
-				GridBagConstraints gridBagConstraints6 = new GridBagConstraints();
-				gridBagConstraints6.insets = new Insets(0, 0, 0, 0);
-				gridBagConstraints6.gridy = 1;
-				gridBagConstraints6.ipadx = 0;
-				gridBagConstraints6.fill = GridBagConstraints.BOTH;
-				gridBagConstraints6.anchor = GridBagConstraints.SOUTH;
-				gridBagConstraints6.gridx = 0;
-				GridBagConstraints gridBagConstraints5 = new GridBagConstraints();
-				gridBagConstraints5.fill = GridBagConstraints.BOTH;
-				gridBagConstraints5.gridy = 0;
-				gridBagConstraints5.ipadx = 116;
-				gridBagConstraints5.ipady = 156;
-				gridBagConstraints5.weightx = 1.0;
-				gridBagConstraints5.weighty = 1.0;
-				gridBagConstraints5.gridx = 0;
-				propsPanel = new JPanel();
-				propsPanel.setLayout(new GridBagLayout());
-				propsPanel.setPreferredSize(new Dimension(50, 39));
-				propsPanel.add(getPropsFieldContainer(), gridBagConstraints5);
-				propsPanel.add(getAddPropButton(), gridBagConstraints6);
+			}catch (BadLocationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-			return propsPanel;
+			return;
 		}
-
-		/**
-		 * This method initializes addPropButton	
-		 * 	
-		 * @return javax.swing.JButton	
-		 */
-		private JButton getAddPropButton() {
-			if (addPropButton == null) {
-				addPropButton = new JButton();
-				addPropButton.setVerticalAlignment(SwingConstants.CENTER);
-				addPropButton.setHorizontalTextPosition(SwingConstants.CENTER);
-				addPropButton.setName("addPropButton");
-				addPropButton.setPreferredSize(new Dimension(200, 29));
-				addPropButton.setComponentOrientation(ComponentOrientation.UNKNOWN);
-				addPropButton.setText("New Property");
-				addPropButton.addActionListener(new java.awt.event.ActionListener() {
-					public void actionPerformed(java.awt.event.ActionEvent e) {
-						jPanel.add(getJTextField(), null);
-						jPanel.validate();
-						jPanel.repaint();
-						System.out.println("actionPerformed()"); // TODO Auto-generated Event stub actionPerformed()
+	}
+	
+	class EnterAction extends AbstractAction {
+		P4Class textArea;
+		public EnterAction(P4Class _textArea){
+			textArea = _textArea;
+		}
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			boolean injectCR=true;
+			JTextComponent c = (JTextComponent) e.getSource();
+			int caretPos = c.getCaretPosition();
+			
+			if (caretPos > 1){
+				try {
+				Document doc =c.getDocument();
+				//remove cr?
+				//doc.remove(caretPos-1, 1);
+					String lastChar = doc.getText(caretPos-1, 1);
+					System.out.println("ENTER- last char was "+lastChar);
+					if (lastChar.equals("{")){
+						//check to see if it's a class
+						int line = ((JTextArea) c).getLineOfOffset(caretPos);
+						int lineOffset = (caretPos)-((JTextArea) c).getLineStartOffset(line);
+						String lineStr = c.getText(((JTextArea) c).getLineStartOffset(line), lineOffset);
+						System.out.println("caretPos="+caretPos+" line="+line+" lineOffset="+lineOffset+" lineStr="+lineStr);
+						if (lineStr.contains("class")|| lineStr.contains(".times") || lineStr.contains(".each")){
+							doc.insertString(caretPos, " \n\t\n}", null);
+							//Point addLoc = getDocXYLoc(textArea,c.getCaretPosition());
+							//p4m.addText(addLoc, "\n");
+							getCurrentText(textArea.getText()); //hack!  god I hate this.
+							injectCR=false;
+						} else {
+							doc.insertString(caretPos, " ->\n\t\n}", null);
+							getCurrentText(textArea.getText()); //hack!  god I hate this.
+								//Point addLoc = getDocXYLoc(textArea,c.getCaretPosition());
+								//p4m.addText(addLoc, "\n");
+							injectCR=false;
+						}
+						c.setCaretPosition(c.getCaretPosition()-2);
 					}
-				});
+			} catch (BadLocationException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
 			}
-			return addPropButton;
-		}
-
-		/**
-		 * This method initializes propsFieldContainer	
-		 * 	
-		 * @return javax.swing.JScrollPane	
-		 */
-		private JScrollPane getPropsFieldContainer() {
-			if (propsFieldContainer == null) {
-				propsFieldContainer = new JScrollPane();
-				propsFieldContainer.setViewportView(getJPanel());
 			}
-			return propsFieldContainer;
-		}
-
-		/**
-		 * This method initializes jPanel	
-		 * 	
-		 * @return javax.swing.JPanel	
-		 */
-		private JPanel getJPanel() {
-			if (jPanel == null) {
-				jPanel = new JPanel();
-				jPanel.setLayout(new BoxLayout(getJPanel(), BoxLayout.Y_AXIS));
-				jPanel.setBackground(new Color(51, 51, 51));
-				jPanel.add(getJTextField(), null);
+			
+			if (injectCR){
+				try {
+					c.getDocument().insertString(caretPos, "\n", null);
+				} catch (BadLocationException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				System.out.println("injectCR");
 			}
-			return jPanel;
 		}
+		
+	}
+	class SubmitTextAction extends AbstractAction {
 
-		/**
-		 * This method initializes jTextField	
-		 * 	
-		 * @return javax.swing.JTextField	
-		 */
-		private JTextField getJTextField() {
-				JTextField jTextField = new JTextField(2);
-				jTextField.setHorizontalAlignment(JTextField.LEFT);
-				jTextField.setPreferredSize(new Dimension(10, 28));
-				jTextField.setMaximumSize(new Dimension(900, 28));
-				jTextField.addActionListener(new ActionListener(){
-					public void actionPerformed(ActionEvent evt) {
-						submitProperty(activePropField.getText());
-						System.out.println("Action performed!!");
-					}
-				});
-				jTextField.addFocusListener(new java.awt.event.FocusAdapter() {   
-					public void focusLost(java.awt.event.FocusEvent e) {
-						submitProperty(activePropField.getText());
-						activePropField = null;
-						System.out.println("focusLost()"); // TODO Auto-generated Event stub focusLost()
-					}
-					public void focusGained(java.awt.event.FocusEvent e) {
-						activePropField = (JTextField)e.getSource();
-						System.out.println("focusGained()"); // TODO Auto-generated Event stub focusGained()
-					}
-				});
-			return jTextField;
+		P4Class textArea;
+		public SubmitTextAction(P4Class _textArea){
+			textArea = _textArea;
 		}
-
-		/**
-		 * This method initializes classPanel	
-		 * 	
-		 * @return javax.swing.JPanel	
-		 */
-		private JPanel getClassPanel() {
-			if (classPanel == null) {
-				GridBagConstraints gridBagConstraints8 = new GridBagConstraints();
-				gridBagConstraints8.gridx = 0;
-				gridBagConstraints8.fill = GridBagConstraints.HORIZONTAL;
-				gridBagConstraints8.anchor = GridBagConstraints.SOUTH;
-				gridBagConstraints8.gridy = 1;
-				GridBagConstraints gridBagConstraints7 = new GridBagConstraints();
-				gridBagConstraints7.fill = GridBagConstraints.BOTH;
-				gridBagConstraints7.weighty = 1.0;
-				gridBagConstraints7.weightx = 1.0;
-				classPanel = new JPanel();
-				classPanel.setLayout(new GridBagLayout());
-				classPanel.add(getClassList(), gridBagConstraints7);
-				classPanel.add(getClassButton(), gridBagConstraints8);
+		@Override
+		public void actionPerformed(ActionEvent arg0) {
+			if(textArea.toString().equals("main")){
+				submitMethods(textArea.getText());
+			} else {
+				submitClass(textArea.getText());
 			}
-			return classPanel;
+			System.out.println("actionPerformed on text area name "+textArea.toString()); // TODO Auto-generated Event stub actionPerformed()
 		}
 
-		/**
-		 * This method initializes classButton	
-		 * 	
-		 * @return javax.swing.JButton	
-		 */
-		private JButton getClassButton() {
-			if (classButton == null) {
-				classButton = new JButton();
-				classButton.setText("New Class");
-				classButton.addActionListener(new java.awt.event.ActionListener() {
-					public void actionPerformed(java.awt.event.ActionEvent e) {
-						DefaultListModel listModel = (DefaultListModel)classList.getModel();
-						int index = listModel.getSize();
-						activeTextArea = createClass("MyClass"+index);
-						listModel.addElement(activeTextArea);
-						classList.setSelectedIndex(index);
-						classList.revalidate();
-						classList.repaint();
-						setEditorPaneView(activeTextArea);
-						System.out.println("actionPerformed()"); // TODO Auto-generated Event stub actionPerformed()
-					}
-				});
-			}
-			return classButton;
-		}
-
-		private void setEditorPaneView(P4Class textArea) {
-			editorPane.setViewportView(textArea);
-			editorPane.revalidate();
-			editorPane.repaint();
-		}
-
-	}  //  @jve:decl-index=0:visual-constraint="10,10"
+	}
+		
+}
 
 
