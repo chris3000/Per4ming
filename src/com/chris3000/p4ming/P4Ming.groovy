@@ -119,12 +119,12 @@ class P4Ming {
 	public static void main(String[] args){
 		//put menu bar at top of screen and not on the app.
 		System.setProperty ("apple.laf.useScreenMenuBar", "true");
-		System.setProperty ("sun.java2d.d3d", "false");
-		System.setProperty ("sun.java2d.ddoffscreen", "false");
-		System.setProperty ("sun.java2d.noddraw", "false");
-		System.setProperty ("apple.awt.fakefullscreen","true");
+		//System.setProperty ("sun.java2d.d3d", "false");
+		//System.setProperty ("sun.java2d.ddoffscreen", "false");
+		//System.setProperty ("sun.java2d.noddraw", "false");
+		//System.setProperty ("apple.awt.fakefullscreen","true");
 		System.setProperty ("apple.awt.fullscreencapturealldisplays", "false");
-		System.setProperty ("apple.awt.graphics.UseQuartz", "true");
+		//System.setProperty ("apple.awt.graphics.UseQuartz", "true");
 		//System.setProperty ("apple.awt.graphics.EnableDeferredUpdates", "true");
 		
 		

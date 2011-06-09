@@ -947,42 +947,62 @@ public class P4Editor extends JFrame{
 	
 	class EnterAction extends AbstractAction {
 		P4Class textArea;
+		final static private char TAB = '\t';
+		final static private char ENTER = '\n';		
 		public EnterAction(P4Class _textArea){
 			textArea = _textArea;
 		}
 		@Override
 		public void actionPerformed(ActionEvent e) {
+			StringBuilder sb = new StringBuilder();
 			boolean injectCR=true;
 			JTextComponent c = (JTextComponent) e.getSource();
 			int caretPos = c.getCaretPosition();
-			
+
 			if (caretPos > 1){
 				try {
-				Document doc =c.getDocument();
-				//remove cr?
-				//doc.remove(caretPos-1, 1);
+					//how many tabs to insert?
+					int curlyCount=getLeftCurlyOffset(c.getText(0, caretPos));
+					for (int i = 0; i < curlyCount; i++) {
+						sb.append(TAB);
+					}
+					Document doc =c.getDocument();
+					//remove cr?
+					//doc.remove(caretPos-1, 1);
 					String lastChar = doc.getText(caretPos-1, 1);
-					System.out.println("ENTER- last char was "+lastChar);
+					//System.out.println("ENTER- last char was "+lastChar);
 					if (lastChar.equals("{")){
 						//check to see if it's a class
 						int line = ((JTextArea) c).getLineOfOffset(caretPos);
 						int lineOffset = (caretPos)-((JTextArea) c).getLineStartOffset(line);
 						String lineStr = c.getText(((JTextArea) c).getLineStartOffset(line), lineOffset);
 						System.out.println("caretPos="+caretPos+" line="+line+" lineOffset="+lineOffset+" lineStr="+lineStr);
-						if (lineStr.contains("class")|| lineStr.contains(".times") || lineStr.contains(".each")){
-							doc.insertString(caretPos, " \n\t\n}", null);
+						if (lineStr.contains("class")|| lineStr.contains(".times") || lineStr.contains(".each") || lineStr.contains("if")){
+							sb.insert(0," \n");
+							sb.append("\n");
+							for (int i = 0; i < (curlyCount-1); i++) {
+								sb.append(TAB);
+							}
+							sb.append("}");
+							doc.insertString(caretPos, sb.toString(), null); //" \n\t\n}"
 							//Point addLoc = getDocXYLoc(textArea,c.getCaretPosition());
 							//p4m.addText(addLoc, "\n");
 							getCurrentText(textArea.getText()); //hack!  god I hate this.
 							injectCR=false;
 						} else {
-							doc.insertString(caretPos, " ->\n\t\n}", null);
+							sb.insert(0," ->\n");
+							sb.append("\n");
+							for (int i = 0; i < (curlyCount-1); i++) {
+								sb.append(TAB);
+							}
+							sb.append("}");
+							doc.insertString(caretPos, sb.toString(), null); //" ->\n\t\n}"
 							getCurrentText(textArea.getText()); //hack!  god I hate this.
 								//Point addLoc = getDocXYLoc(textArea,c.getCaretPosition());
 								//p4m.addText(addLoc, "\n");
 							injectCR=false;
 						}
-						c.setCaretPosition(c.getCaretPosition()-2);
+						c.setCaretPosition(c.getCaretPosition()-(curlyCount-1)-2);
 					}
 			} catch (BadLocationException e1) {
 				// TODO Auto-generated catch block
@@ -992,15 +1012,33 @@ public class P4Editor extends JFrame{
 			
 			if (injectCR){
 				try {
-					c.getDocument().insertString(caretPos, "\n", null);
+					sb.insert(0,ENTER);
+					c.getDocument().insertString(caretPos, sb.toString(), null);
 				} catch (BadLocationException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
-				System.out.println("injectCR");
+				getCurrentText(textArea.getText()); //hack!  god I hate this.
+				//System.out.println("injectCR");
 			}
 		}
-		
+		private int getLeftCurlyOffset(String text){
+			int curlyCount=0;
+			char leftCurly='{';
+			char rightCurly='}';
+			char[] chars = text.toCharArray();
+			for (int i = 0; i < chars.length; i++) {
+				if (chars[i]==leftCurly){
+					curlyCount++;
+				} else if (chars[i]==rightCurly){
+					curlyCount--;
+				}
+			}
+			if (curlyCount < 0){
+				curlyCount=0;
+			}
+			return curlyCount;
+		}
 	}
 	class SubmitTextAction extends AbstractAction {
 
