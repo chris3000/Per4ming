@@ -207,7 +207,7 @@ public class P4Editor extends JFrame{
 		if (name != null){
 			if (name.equals("main")){
 				editorTextArea.isMain = true;
-				editorTextArea.setText("def draw1 = {->\n\t//code goes here\n\t//ellipse(200,200,random(20),random(10));\n}");
+				editorTextArea.setText("def draw1 = {->\n\t//code goes here\n\tbackground(0)\n\t//ellipse(400,100,random(30),random(20))\n}");
 			} else {
 				editorTextArea.setText("import com.chris3000.p4ming.viewer.P4Core;\n\nclass "+name+" extends P4Core {\n\t//code goes here\n}\n");
 				editorTextArea.checkClassName(true);
@@ -833,7 +833,7 @@ public class P4Editor extends JFrame{
 		public void caretUpdate(CaretEvent caretEvent) {
 			int dot = caretEvent.getDot();
 			int mark = caretEvent.getMark();
-			System.out.println(""+dot+","+mark);
+			//System.out.println(""+dot+","+mark);
 			Point dotLoc = null;
 			if (textType == AREA){
 				dotLoc = getDocXYLoc(activeTextArea,dot);
@@ -895,7 +895,7 @@ public class P4Editor extends JFrame{
 			this.doc = doc;
 		}
 		public void focusGained(java.awt.event.FocusEvent e) {
-			System.out.println("focusGained()"); // TODO Auto-generated Event stub focusGained()
+			//System.out.println("focusGained()"); // TODO Auto-generated Event stub focusGained()
 			try {
 				getCurrentText(doc.getText(doc.getStartPosition().getOffset(), doc.getEndPosition().getOffset()));
 			} catch (BadLocationException e1) {

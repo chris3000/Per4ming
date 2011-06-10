@@ -41,7 +41,13 @@ public class P4Text {
 	float maxChars = 0;
 	int lineLength = 0;
 	int maxLineLength = 0;
-	
+	//fading info
+	boolean useFade = true;
+	public int fadeDelay = 3000;//millis
+	public float fadeDuration = 1000;//millis
+	long lastKey=System.currentTimeMillis();
+	float topFade = 128;//0-255
+	float currentFadePct =1;
 	float maxLineSpace = 82.85f; //82.85 pixels between lines
 
 	int leftPadding = 10; //space from left screen, in pixels.
@@ -74,8 +80,35 @@ public class P4Text {
 	public void calc(){
 		calcScale();
 		calcVert();
+		if (useFade){
+			calcFade();
+		}
 		if (cursorEnabled){
 			cursor.calcBlink();
+		}
+	}
+
+	public void fadeOn(){
+		useFade =true;
+		currentFadePct=1;
+	}
+	
+	public void fadeOff(){
+		useFade =false;
+		currentFadePct=1;
+	}
+	
+	private void calcFade(){
+		if (currentFadePct > 0){
+			float lastKeyDelay = (float)(System.currentTimeMillis()-lastKey);
+			if (lastKeyDelay>fadeDelay){
+				lastKeyDelay = lastKeyDelay-fadeDelay;
+				currentFadePct = 1f-(lastKeyDelay/fadeDuration);
+				if (currentFadePct < 0){
+					currentFadePct = 0;
+				}
+			}
+			//p.println("fadepct = "+currentFadePct);
 		}
 	}
 
@@ -118,9 +151,9 @@ public class P4Text {
 	public synchronized void render(){
 		p.rectMode(p.CORNER);
 		p.frustum(p.width*-1, p.width, p.height*-1, p.height, 1038, 0);
-		p.fill(0,bgAlpha);
+		p.fill(0,0,0,bgAlpha*currentFadePct);
 		p.rect(0,0,p.width, p.height);
-		p.fill(255);
+		p.fill(255,255,255,255f*currentFadePct);
 		p.textFont(font);
 		p.pushMatrix();
 			//float vertOffset = (currentVert-targetVert);
@@ -138,7 +171,7 @@ public class P4Text {
 				float screenCY = p.screenY(cursorX, cursorY);
 				offsetText(screenCX, screenCY);
 				//draw it
-				p.fill(255,128);
+				p.fill(255,255,255,128f*currentFadePct);
 				p.noStroke();
 				if (cursor.isVisible()){
 				p.rect(cursorX, cursorY, 40, -70);
@@ -167,16 +200,17 @@ public class P4Text {
 			}
 		p.popMatrix();
 		if (showErrorMessage){
-			p.fill(255,128,128);
+			p.fill(255,128,128,255f);
 			p.textFont(font, 14);
 			p.text(errorMessage,5,p.height-80);
 			showErrorMessage = false;//turn off.  must get reset every frame
 		}
 		if (showFramerate){
-			p.fill(255);
+			p.fill(255,255,255,255f*currentFadePct);
 			p.textFont(font, 14);
 			p.text(""+(int)(p.frameRate),5,p.height-30);
 		}
+		p.fill(255,255);
 	}
 	
 	
@@ -206,10 +240,12 @@ public class P4Text {
 	
 	public void setSelection(Point dot, Point mark){
 		cursor.selectOn(dot, mark);
+		resetFade();
 	}
 	
 	public void selectionOff(){
 		cursor.selectOff();
+		resetFade();
 	}
 	
 	public void setErrorMessage(String msg){
@@ -218,6 +254,7 @@ public class P4Text {
 		}
 		errorMessage = msg;
 		showErrorMessage = true;
+		resetFade();
 	}
 	
 	
@@ -243,7 +280,12 @@ public class P4Text {
 		lines = newLines;
 		calcTargetScale();
 		cursor.blinkOn();
-		
+		resetFade();
+	}
+	
+	private void resetFade(){
+		currentFadePct = 1;
+		lastKey = System.currentTimeMillis();
 	}
 	
 	public void removeText(Point fromLoc,int amount){
@@ -319,6 +361,7 @@ public class P4Text {
 		}
 		calcTargetScale();
 		cursor.blinkOn();
+		resetFade();
 		//p.println("END!! text is "+getText()+" lines.size="+lines.size());
 	}
 	
@@ -407,6 +450,7 @@ public class P4Text {
 	public void caretEvent(Point dotLoc){
 		cursor.setLocation(dotLoc.x, dotLoc.y);
 		cursor.blinkOn();
+		resetFade();
 	}
 	
 	public void cursorUp(){
