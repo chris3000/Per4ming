@@ -59,7 +59,7 @@ public class P4Text {
 	/** should be true if an external editor is sending caret data */
 	public boolean caretOverride = true;
 	/** sets alpha of darkened bg */
-	private float bgAlpha = 128;
+	private float bgAlpha = 96;
 	private boolean cursorEnabled = true;
 	private boolean showFramerate = true;
 	

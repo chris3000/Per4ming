@@ -11,6 +11,7 @@ import processing.core.PApplet
 import processing.core.PImage
 
 class P4Applet extends PApplet{
+	float phase=0f;
 	//using binding for added properties.  Kind of a hack?  rather use metaclass.
 	Binding binding = new Binding([:]);
 	GroovyShell shell = new GroovyShell(binding);
@@ -271,6 +272,7 @@ class P4Applet extends PApplet{
 		errorSign = loadImage("internal_assets/error_x.png");
 		gsetup()
 		initText();
+		sphereDetail(10); //start with less detail
 		//binding.setMetaClass(this.getMetaClass());
 		p4aInit = true;
 	}
@@ -302,11 +304,51 @@ class P4Applet extends PApplet{
 		return random(1f);
 	}
 	
+	public void fill(Double r, Double g, Double b){
+		fill((float)r, (float)g, (float)b);
+	}
+	
+	public void fill(Double r, Double g, Double b, Double a){
+		fill((float)r, (float)g, (float)b, (float)a);
+	}
+	
+	public void stroke(Double r, Double g, Double b){
+		stroke((float)r, (float)g, (float)b);
+	}
+	
+	public void stroke(Double r, Double g, Double b, Double a){
+		stroke((float)r, (float)g, (float)b, (float)a);
+	}
+	
 	public void rect(Double xx, Double xy, Double w, Double h){
 		rect((float)xx, (float)xy, (float)w, (float)h);
 	}
 	
 	public void ellipse(Double xx, Double xy, Double w, Double h){
 		ellipse((float)xx, (float)xy, (float)w, (float)h);
+	}
+	
+	public void translate(Double x, Double y, Double z){
+		translate((float)x, (float) y, (float)z);
+	}
+	
+	public void translate(Double x, Double y){
+		translate((float)x, (float) y);
+	}
+	
+	public void scale(Double xy){
+		scale((float)xy);
+	}
+	
+	public void scale(Double x, Double y, Double z){
+		scale((float)x, (float) y, (float)z);
+	}
+	
+	public void rotate(Double z){
+		rotate((float)z);
+	}
+	
+	public void rotate(Double x, Double y, Double z){
+		rotate((float)x, (float) y, (float)z);
 	}
 }

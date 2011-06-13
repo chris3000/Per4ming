@@ -69,6 +69,7 @@ public class P4Editor extends JFrame{
 	P4Class activeTextArea = null;
 	private P4Prefs p4p = new P4Prefs(); //  @jve:decl-index=0:
 	private P4Editor p4e = null;  //this instance
+	private KeyStroke cmdI = KeyStroke.getKeyStroke(KeyEvent.VK_I, ActionEvent.META_MASK);  //  @jve:decl-index=0:
 	private KeyStroke altEnter = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, ActionEvent.ALT_MASK);  //  @jve:decl-index=0:
 	private KeyStroke enter = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0);  //  @jve:decl-index=0:
 	private boolean started = false;
@@ -207,7 +208,7 @@ public class P4Editor extends JFrame{
 		if (name != null){
 			if (name.equals("main")){
 				editorTextArea.isMain = true;
-				editorTextArea.setText("def draw1 = {->\n\t//code goes here\n\tbackground(0)\n\t//ellipse(400,100,random(30),random(20))\n}");
+				editorTextArea.setText("def draw1 = {->\n\t//code goes here\n\tbackground(0)\n\t//ellipse(400,100,20,20)\n}");
 			} else {
 				editorTextArea.setText("import com.chris3000.p4ming.viewer.P4Core;\n\nclass "+name+" extends P4Core {\n\t//code goes here\n}\n");
 				editorTextArea.checkClassName(true);
@@ -222,6 +223,8 @@ public class P4Editor extends JFrame{
 		editorTextArea.getActionMap().put("enter", new EnterAction(editorTextArea));
 		editorTextArea.getInputMap().put(altEnter, "submitText");
 		editorTextArea.getActionMap().put("submitText", new SubmitTextAction(editorTextArea));
+		editorTextArea.getInputMap().put(cmdI, "indent");
+		editorTextArea.getActionMap().put("indent", new IndentTextAction(editorTextArea));
 		return editorTextArea;
 	}
 
@@ -1064,7 +1067,91 @@ public class P4Editor extends JFrame{
 		}
 
 	}
+	
+	class IndentTextAction extends AbstractAction {
+
+		P4Class textArea;
+		final static private char leftCurly='{';
+		final static private char rightCurly='}';
+		final static private char TAB = '\t';
+		final static private char ENTER = '\n';	
+		public IndentTextAction(P4Class _textArea){
+			textArea = _textArea;
+		}
+		@Override
+		public void actionPerformed(ActionEvent arg0) {
+			int selectBegin = textArea.getSelectionStart();
+			int selectEnd = textArea.getSelectionEnd();
+			if (selectBegin == selectEnd){
+				textArea.selectAll();
+				selectBegin = textArea.getSelectionStart();
+				selectEnd = textArea.getSelectionEnd();
+			}
+			String selectedText = textArea.getSelectedText();
+			char[] chars = selectedText.toCharArray();
+			if (chars == null){
+				chars = new char[0];
+			}
+			int curlyCount = 0;
+			int startLineBegin = 0;
+			try {
+				int startLine = textArea.getLineOfOffset(selectBegin);
+				startLineBegin = textArea.getLineStartOffset(startLine);
+				curlyCount = getLeftCurlyOffset(textArea.getText(0,selectBegin));
+			} catch (BadLocationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			boolean atBeginning = false;
+			if (startLineBegin == selectBegin){
+				atBeginning=true;
+			}
+			StringBuffer sb = new StringBuffer();
+			for (int i = 0; i < chars.length; i++) {
+				curlyCount += checkCurly(chars[i]);
+				if (atBeginning && !Character.isWhitespace(chars[i])){
+					for (int j = 0; j < curlyCount; j++) {
+						sb.append(TAB);
+					}
+					atBeginning = false;
+				}
+				if (!atBeginning){
+					if (chars[i]==ENTER){
+						atBeginning = true;
+					}
+					sb.append(chars[i]);
+				}
+			}
+			textArea.replaceSelection(sb.toString());
+			//int curlyCount = getLeftCurlyCount(textArea.getText())
+			System.out.println("indent actionPerformed on text area name "+textArea.toString()); // TODO Auto-generated Event stub actionPerformed()
+		}
 		
+		private int checkCurly(char c){
+			if (c==leftCurly){
+				return 1;
+			} else if (c==rightCurly){
+				return -1;
+			} else {
+				return 0;
+			}
+		}
+		private int getLeftCurlyOffset(String text){
+			int curlyCount=0;
+			char[] chars = text.toCharArray();
+			for (int i = 0; i < chars.length; i++) {
+				if (chars[i]==leftCurly){
+					curlyCount++;
+				} else if (chars[i]==rightCurly){
+					curlyCount--;
+				}
+			}
+			if (curlyCount < 0){
+				curlyCount=0;
+			}
+			return curlyCount;
+		}
+	}
 }
 
 
