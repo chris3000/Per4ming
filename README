@@ -12,12 +12,18 @@ grid, and run away with your spouse.  If you really want to try Per4Ming, by all
 my guest.  Just know that it is not ready for Prime-Time yet, and I accept no responsibility
 for any unknown weirdness.
 
-1. Preferences.
-There isn't much to change right now.  In fact, I'd pretty much leave
-the defaults alone.  You can set the rendering screen to full screen, and you can turn
-on / off the audio parsing.  Anything else may or may not work as expected.
+Compiling: Per4ming was coded in Eclipse with the Groovy 1.8 plugin.  Your best bet is to 
+check out the code into Eclipse and run from there.  There's no ANT scripts or any other
+automated builders at the moment.  There's a pre-compiled OSX app under "Downloads" that 
+should run on most modern Mac machines, but I can't guarantee that it will behave properly.
+CAVEAT EMPTOR.  
 
-2. Code editor.
+Preferences.
+	There isn't much to change right now.  In fact, I'd pretty much leave
+	the defaults alone.  You can set the rendering screen to full screen, and you can turn
+	on / off the audio parsing.  Anything else may or may not work as expected.
+
+Code editor.
 	Main Text Area:
 	Write your code here.  the code in the draw method will run at the set frame rate.
 		Option-Enter will send the current text area to the compiler.
@@ -53,6 +59,12 @@ Built-In properties.
 	audioLevel=<current audio level> - This value represents the "loudness" of the
 	audio.  This is the same as calling aud.getMix.levels(), and is set on every frame.
 	
+Coding:
+	You should be able to use any of the core API from the processing library.
+	http://processing.org/reference/
+	Groovy shortcuts like closures, .times, .each, and so on, should work.  You can
+	always fall back on to straight up Java.
+	
 gotchas:
 	x and y cannot be defined as global properties using the Properties text fields,
 	but they can be used as local variables inside a method.
@@ -67,7 +79,9 @@ gotchas:
 	most used methods like ellipse, rect, random, and some others, but many other
 	methods will throw an error if you're doing any calculations to float values.
 
-Acknowledgements:  Per4ming is influenced by the Fluxus Live Coding environment (http://www.pawfal.org/fluxus/)
+Acknowledgements:
+	Per4ming is influenced by the Fluxus Live Coding environment (http://www.pawfal.org/fluxus/).
+	Per4ming uses the Processing graphics library for its visual rendering (http://processing.org)
 
 LICENSE:	
 	Per4Ming by Chris Kairalla is licensed under a Creative Commons
@@ -77,5 +91,3 @@ LICENSE:
 	Chris Kairalla.  This license only covers code in the com.chris3000.* packages,
 	and does not apply to any code used by Processing, Apache, or Groovy.
 	
-	<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png" /></a><br /><span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/InteractiveResource" property="dct:title" rel="dct:type">Per4Ming</span> by <a xmlns:cc="http://creativecommons.org/ns#" href="www.chris3000.com" property="cc:attributionName" rel="cc:attributionURL">Chris Kairalla</a> is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License</a>.<br />Based on a work at <a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/chris3000/Per4ming" rel="dct:source">github.com</a>.
-		
