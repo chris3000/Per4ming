@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- WARNING: Eclipse auto-generated file.
+              Any modifications will be overwritten.
+              To include a user specific buildfile here, simply create one in the same
+              directory with the processing instruction <?eclipse.ant.import?>
+              as the first entry and export the buildfile again. -->
+<project basedir="." default="build" name="P4Ming">
+    <property environment="env"/>
+    <property name="ECLIPSE_HOME" value="/Applications/eclipse_3.6"/>
+    <property name="debuglevel" value="source,lines,vars"/>
+    <property name="target" value="1.6"/>
+    <property name="source" value="1.6"/>
+    <path id="Groovy Libraries.libraryclasspath">
+        <pathelement location="${ECLIPSE_HOME}/plugins/org.codehaus.groovy_1.8.0.xx-20110511-1600-e36-RELEASE/lib/groovy-all-1.8.0.jar"/>
+        <pathelement location="${ECLIPSE_HOME}/plugins/org.codehaus.groovy_1.8.0.xx-20110511-1600-e36-RELEASE/lib/commons-cli-1.2.jar"/>
+        <pathelement location="${ECLIPSE_HOME}/plugins/org.codehaus.groovy_1.8.0.xx-20110511-1600-e36-RELEASE/lib/ivy-2.2.0.jar"/>
+        <pathelement location="${ECLIPSE_HOME}/plugins/org.codehaus.groovy_1.8.0.xx-20110511-1600-e36-RELEASE/lib/jline-0.9.94.jar"/>
+        <pathelement location="${ECLIPSE_HOME}/plugins/org.codehaus.groovy_1.8.0.xx-20110511-1600-e36-RELEASE/lib/servlet-api-2.4.jar"/>
+    </path>
+    <path id="P4Ming.classpath">
+        <pathelement location="bin"/>
+        <path refid="Groovy Libraries.libraryclasspath"/>
+        <pathelement location="lib/core/core.jar"/>
+        <pathelement location="lib/opengl/gluegen-rt.jar"/>
+        <pathelement location="lib/opengl/jogl.jar"/>
+        <pathelement location="lib/opengl/opengl.jar"/>
+        <pathelement location="lib/minim/jl1.0.jar"/>
+        <pathelement location="lib/minim/jsminim.jar"/>
+        <pathelement location="lib/minim/minim-spi.jar"/>
+        <pathelement location="lib/minim/minim.jar"/>
+        <pathelement location="lib/minim/mp3spi1.9.4.jar"/>
+        <pathelement location="lib/minim/tritonus_aos.jar"/>
+        <pathelement location="lib/minim/tritonus_share.jar"/>
+        <pathelement location="lib/jedit/jedit.jar"/>
+        <pathelement location="lib/commons/commons-configuration-1.6.jar"/>
+        <pathelement location="lib/commons/commons-lang-2.6.jar"/>
+        <pathelement location="lib/commons/commons-collections-3.2.1.jar"/>
+        <pathelement location="lib/commons/commons-logging-1.1.1.jar"/>
+    </path>
+    <target name="init">
+        <mkdir dir="bin"/>
+        <copy includeemptydirs="false" todir="bin">
+            <fileset dir="src">
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+        <copy includeemptydirs="false" todir="bin">
+            <fileset dir="internal_assets">
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+    </target>
+    <target name="clean">
+        <delete dir="bin"/>
+    </target>
+    <target depends="clean" name="cleanall"/>
+    <target depends="build-subprojects,build-project" name="build"/>
+    <target name="build-subprojects"/>
+    <target depends="init" name="build-project">
+        <echo message="${ant.project.name}: ${ant.file}"/>
+        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}">
+            <src path="src"/>
+            <classpath refid="P4Ming.classpath"/>
+        </javac>
+        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}">
+            <src path="internal_assets"/>
+            <classpath refid="P4Ming.classpath"/>
+        </javac>
+    </target>
+    <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects"/>
+    <target name="P4Applet">
+        <java classname="sun.applet.AppletViewer" dir="." failonerror="true" fork="yes">
+            <arg line="P4Applet.html"/>
+            <classpath refid="P4Ming.classpath"/>
+        </java>
+    </target>
+    <target name="P4Ming">
+        <java classname="com.chris3000.p4ming.P4Ming" failonerror="true" fork="yes">
+            <jvmarg line="-Xms128m -Xmx512m"/>
+            <classpath refid="P4Ming.classpath"/>
+        </java>
+    </target>
+    <target name="P4Prefs">
+        <java classname="com.chris3000.p4ming.P4Prefs" failonerror="true" fork="yes">
+            <classpath refid="P4Ming.classpath"/>
+        </java>
+    </target>
+    <target name="P4Viewer">
+        <java classname="com.chris3000.p4ming.viewer.P4Viewer" failonerror="true" fork="yes">
+            <classpath refid="P4Ming.classpath"/>
+        </java>
+    </target>
+    <target name="Text (1)">
+        <java classname="sun.applet.AppletViewer" dir="." failonerror="true" fork="yes">
+            <arg line="Text (1).html"/>
+            <classpath refid="P4Ming.classpath"/>
+        </java>
+    </target>
+</project>
