@@ -24,6 +24,7 @@ public class P4Viewer extends WindowAdapter{
 
 	public P4Viewer(P4Ming _p4m){
 		p4m = _p4m;
+		initOperatorOverload();
 	}
 
 	public P4Applet getPApplet(){
@@ -155,5 +156,27 @@ public class P4Viewer extends WindowAdapter{
 		int x = (dim.width-w)/2;
 		int y = (dim.height-h)/2;
 		return [x,y];
+	}
+	
+	private void initOperatorOverload(){
+		Number.metaClass.plus << { Number other ->
+			Operators.plus (delegate, other);
+		}
+		
+		Number.metaClass.minus << { Number other ->
+			Operators.minus (delegate, other);
+		}
+		
+		Number.metaClass.multiply << { Number other ->
+			Operators.multiply (delegate, other);
+		}
+		
+		Number.metaClass.div << { Number other ->
+			Operators.div (delegate, other);
+		}
+		
+		Number.metaClass.mod << { Number other ->
+			Operators.mod (delegate, other);
+		}
 	}
 }

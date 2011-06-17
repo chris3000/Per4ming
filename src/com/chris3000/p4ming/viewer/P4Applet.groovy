@@ -295,7 +295,7 @@ class P4Applet extends PApplet{
 		}
 	}
 	//********* fix the double bug!
-	
+/*	
 	public float random(Double num){
 		return (float)random(num);
 	}
@@ -350,5 +350,5 @@ class P4Applet extends PApplet{
 	
 	public void rotate(Double x, Double y, Double z){
 		rotate((float)x, (float) y, (float)z);
-	}
+	}*/
 }
