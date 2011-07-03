@@ -19,6 +19,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
 
 import javax.swing.JTextArea;
 import javax.swing.event.CaretEvent;
@@ -29,18 +30,11 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
 
-import com.chris3000.p4ming.editor.P4Editor.CaretLoc;
-import com.chris3000.p4ming.editor.P4Editor.CodeKeyListener;
-import com.chris3000.p4ming.editor.P4Editor.DocListener;
-import com.chris3000.p4ming.editor.P4Editor.FocusListen;
-import com.chris3000.p4ming.editor.P4Editor.SubmitTextAction;
+
 import com.chris3000.p4ming.editor.project.P4Class;
+import com.chris3000.p4ming.editor.project.P4Container;
 
 public class P4RunOnce extends JFrame {
-	private KeyStroke enter = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0);  //  @jve:decl-index=0:
-	private KeyStroke altEnter = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, ActionEvent.ALT_MASK);  //  @jve:decl-index=0:
-	private KeyStroke altLeft = KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, ActionEvent.ALT_MASK);  //  @jve:decl-index=0:
-	private KeyStroke altRight = KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, ActionEvent.ALT_MASK);  //  @jve:decl-index=0:
 
 	private static final long serialVersionUID = 1L;
 	private JPanel jContentPane = null;
@@ -49,14 +43,15 @@ public class P4RunOnce extends JFrame {
 	private JButton submitButton = null;
 	private JButton Next = null;
 	private JButton Previous = null;
-	private P4Editor parent = null;
+	private P4Container parent = null;
 	private JTextArea jTextArea = null;
 	private int codeIndex = 0;
 	private int codeIndexLimit=0;
+	//ArrayList<String> runOncePreviousText = new ArrayList<String>();  //  @jve:decl-index=0:
 	/**
 	 * This is the default constructor
 	 */
-	public P4RunOnce(P4Editor p) {
+	public P4RunOnce(P4Container p) {
 		super();
 		parent = p;
 		codeIndex = parent.runOncePreviousText.size();
@@ -210,13 +205,13 @@ public class P4RunOnce extends JFrame {
 			jTextArea.addCaretListener(new CaretLoc());
 			jTextArea.addFocusListener(new FocusListen(jTextArea.getDocument()));
 			jTextArea.getDocument().addDocumentListener(new DocListener());
-			jTextArea.getInputMap().put(enter, "enter");
+			jTextArea.getInputMap().put(P4KeyStroke.enter, "enter");
 			jTextArea.getActionMap().put("enter", new EnterAction(jTextArea));
-			jTextArea.getInputMap().put(altEnter, "submitText");
+			jTextArea.getInputMap().put(P4KeyStroke.altEnter, "submitText");
 			jTextArea.getActionMap().put("submitText", new SubmitTextAction(jTextArea));
-			jTextArea.getInputMap().put(altLeft, "previous");
+			jTextArea.getInputMap().put(P4KeyStroke.altLeft, "previous");
 			jTextArea.getActionMap().put("previous", new PreviousAction());
-			jTextArea.getInputMap().put(altRight, "next");
+			jTextArea.getInputMap().put(P4KeyStroke.altRight, "next");
 			jTextArea.getActionMap().put("next", new NextAction());
 			//jTextArea.addKeyListener(new CodeKeyListener());
 		}
@@ -244,9 +239,9 @@ public class P4RunOnce extends JFrame {
 			Point dotLoc = getDocXYLoc(jTextArea,dot);
 			if(mark != dot){ //selection
 				Point markLoc = getDocXYLoc(jTextArea,mark);
-				parent.p4m.caretEvent(dotLoc,markLoc);
+				parent.caretEvent(dotLoc,markLoc);
 			} else { 
-				parent.p4m.caretEvent(dotLoc);
+				parent.caretEvent(dotLoc);
 			}
 
 			// System.out.println("Dot: "+ caretEvent.getDot()+" Mark: "+caretEvent.getMark());
@@ -269,7 +264,7 @@ public class P4RunOnce extends JFrame {
 			try {
 				changedText = e.getDocument().getText(e.getOffset(), e.getLength());
 				Point addLoc = getDocXYLoc(jTextArea,e.getOffset());
-				parent.p4m.addText(addLoc, changedText);
+				parent.addText(addLoc, changedText);
 			} catch (BadLocationException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
@@ -280,7 +275,7 @@ public class P4RunOnce extends JFrame {
 		public void removeUpdate(DocumentEvent e) {
 			//System.out.println("length="+e.getLength()+", offset="+e.getOffset()+", type="+e.getType());
 			Point removeLoc = getDocXYLoc(jTextArea,e.getOffset());
-			parent.p4m.removeText(removeLoc,e.getLength());
+			parent.removeText(removeLoc,e.getLength());
 		}	
 	}
 

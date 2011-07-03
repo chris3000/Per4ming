@@ -12,6 +12,7 @@ import processing.core.PImage
 
 class P4Applet extends PApplet{
 	float phase=0f;
+	private int activeCode = 1;
 	//using binding for added properties.  Kind of a hack?  rather use metaclass.
 	Binding binding = new Binding([:]);
 	GroovyShell shell = new GroovyShell(binding);
@@ -44,7 +45,7 @@ class P4Applet extends PApplet{
 	//are we done with initialization?
 	boolean p4aInit = false;
 
-	
+
 	public P4Applet(int w, int h, int frameRate, float[] bgColor, boolean openGL){
 		p4width = w;
 		p4height = h;
@@ -52,7 +53,7 @@ class P4Applet extends PApplet{
 		internal_bg = bgColor;
 		internal_opengl=openGL;
 	}
-	
+
 	def enableText = { boolean enabled ->
 		showText = enabled;
 	}
@@ -68,13 +69,13 @@ class P4Applet extends PApplet{
 		audioEnabled = true;
 		println("audio initialized with line out name "+lineInName);
 	}
-	
+
 	synchronized void addMethod (P4Message message) {
-		println("adding message ${message.toString()}")
+		//println("adding message ${message.toString()}")
 		queue.add message
 		//println("queue size:"+queue.size)
 	}
-	
+
 	def gsetup = {
 		// queue.add( "ellipse(200,200,random(20),random(10));")
 		if (internal_opengl){
@@ -84,6 +85,10 @@ class P4Applet extends PApplet{
 		}
 		background(internal_bg[0],internal_bg[1],internal_bg[2]);
 		frameRate(internal_framerate);
+		//make draw for 1-9 code containers
+		for (int i = 1; i < 10; i++){
+			addCodeContainer(i);
+		}
 		// makeMethod("override","ellipse(10,10,10,random(50));");
 	}
 
@@ -105,14 +110,16 @@ class P4Applet extends PApplet{
 	}
 
 	def internal_gdraw = {
-		switch(currentEditor){
-			case 1: try{draw1();}catch (Exception e){internal_drawError(e);}; break;
+		try{
+			"draw${activeCode}"();
+		}catch (Exception e){
+			internal_drawError(e);
 		}
 	}
 
-	def draw1 = {
-		background(100);
-	}
+	/*	def draw1 = {
+	 background(100);
+	 }*/
 
 	def internal_drawError = { Exception e ->
 		image(errorSign, (width/2)-(errorSign.width/2), (height/2)-(errorSign.height/2));
@@ -142,7 +149,7 @@ class P4Applet extends PApplet{
 		this."${name}" = propEvaluate(value);
 		println(name+"="+value);
 	}
-	
+
 	def makeClass = {className, classText->
 		Class clz = gcl.parseClass(classText);
 		String simpleName=clz.getSimpleName();
@@ -154,7 +161,7 @@ class P4Applet extends PApplet{
 		}
 		println("new class ="+clz.getSimpleName());
 	}
-	
+
 	def runOnce = {value ->
 		//GroovyShell shell = new GroovyShell();
 		Closure received = shell.evaluate("{->${value}}");
@@ -173,36 +180,35 @@ class P4Applet extends PApplet{
 	public void addText(Point atLoc,String text){
 		p4text.addText(atLoc, text);
 	}
-	
+
 	public void caretEvent(Point dot){
 		p4text.caretEvent(dot)
 		p4text.selectionOff();
 	}
-	
+
 	public void caretEvent(Point dot, Point mark){
 		p4text.setSelection (dot, mark);
 		//println(dot.toString()+"  "+mark.toString())
 	}
 
-/*	public void setup(){
-		size(800,600,P3D);
-		frameRate(30);
-		noStroke();
-		p4aInit=true;
-	}
-	
-	public void draw() {
-		background(0);
-		//code goes here
-		for (int y = 0; y < 100; y++) {
-			for (int x = 0; x < 100; x++) {
-				ellipse(x*8,y*6,random(20),random(10));
-				//pushMatrix();
-			}
-		}
-		println((int)frameRate);
-	}*/
-	
+	/*	public void setup(){
+	 size(800,600,P3D);
+	 frameRate(30);
+	 noStroke();
+	 p4aInit=true;
+	 }
+	 public void draw() {
+	 background(0);
+	 //code goes here
+	 for (int y = 0; y < 100; y++) {
+	 for (int x = 0; x < 100; x++) {
+	 ellipse(x*8,y*6,random(20),random(10));
+	 //pushMatrix();
+	 }
+	 }
+	 println((int)frameRate);
+	 }*/
+
 	public void draw () {
 		//println(queue.size())
 		while (!queue.isEmpty()){
@@ -211,6 +217,7 @@ class P4Applet extends PApplet{
 				//println("got message ${internal_message.toString()}");
 				//byte type = internal_message.type;
 				//println(""+type+": "+internal_message.getTypeString());
+				activeCode = internal_message.codeID;
 				switch(internal_message.type){
 					case P4Message.METHOD: makeMethod(internal_message.name, internal_message.value); break;
 					case P4Message.CLASS: makeClass(internal_message.name, internal_message.value); break;
@@ -233,8 +240,8 @@ class P4Applet extends PApplet{
 		checkMatrix();
 		if (showText){
 			try{
-			p4text.calc();
-			p4text.render();
+				p4text.calc();
+				p4text.render();
 			} catch (java.lang.RuntimeException e1){
 				String int_msg = e1.getMessage();
 				println(int_msg);
@@ -242,7 +249,7 @@ class P4Applet extends PApplet{
 					println("running popMatrix() 32 times");
 					32.times {
 						popMatrix();
-						 }
+					}
 				}
 			}catch(Exception e){
 				e.printStackTrace();
@@ -266,7 +273,7 @@ class P4Applet extends PApplet{
 			minim.stop();
 		}
 	}
-	
+
 	public void setup () {
 		p=this;
 		errorSign = loadImage("internal_assets/error_x.png");
@@ -276,8 +283,17 @@ class P4Applet extends PApplet{
 		//binding.setMetaClass(this.getMetaClass());
 		p4aInit = true;
 	}
-	
 
+	public void addCodeContainer(int id){
+		makeMethod("draw"+id, "{-> \nbackground(100);\n}");
+	}
+	
+	public void changeCodeID(int id){
+		if (id > 0 && id < 10){
+			activeCode = id;
+		}
+	}
+	
 	private void checkMatrix(){
 		if(matrixStackDepth != 0){
 			println("matrix is off by "+matrixStackDepth);
@@ -295,60 +311,47 @@ class P4Applet extends PApplet{
 		}
 	}
 	//********* fix the double bug!
-/*	
-	public float random(Double num){
-		return (float)random(num);
-	}
-	
-	public float random(){
-		return random(1f);
-	}
-	
-	public void fill(Double r, Double g, Double b){
-		fill((float)r, (float)g, (float)b);
-	}
-	
-	public void fill(Double r, Double g, Double b, Double a){
-		fill((float)r, (float)g, (float)b, (float)a);
-	}
-	
-	public void stroke(Double r, Double g, Double b){
-		stroke((float)r, (float)g, (float)b);
-	}
-	
-	public void stroke(Double r, Double g, Double b, Double a){
-		stroke((float)r, (float)g, (float)b, (float)a);
-	}
-	
-	public void rect(Double xx, Double xy, Double w, Double h){
-		rect((float)xx, (float)xy, (float)w, (float)h);
-	}
-	
-	public void ellipse(Double xx, Double xy, Double w, Double h){
-		ellipse((float)xx, (float)xy, (float)w, (float)h);
-	}
-	
-	public void translate(Double x, Double y, Double z){
-		translate((float)x, (float) y, (float)z);
-	}
-	
-	public void translate(Double x, Double y){
-		translate((float)x, (float) y);
-	}
-	
-	public void scale(Double xy){
-		scale((float)xy);
-	}
-	
-	public void scale(Double x, Double y, Double z){
-		scale((float)x, (float) y, (float)z);
-	}
-	
-	public void rotate(Double z){
-		rotate((float)z);
-	}
-	
-	public void rotate(Double x, Double y, Double z){
-		rotate((float)x, (float) y, (float)z);
-	}*/
+	/*	
+	 public float random(Double num){
+	 return (float)random(num);
+	 }
+	 public float random(){
+	 return random(1f);
+	 }
+	 public void fill(Double r, Double g, Double b){
+	 fill((float)r, (float)g, (float)b);
+	 }
+	 public void fill(Double r, Double g, Double b, Double a){
+	 fill((float)r, (float)g, (float)b, (float)a);
+	 }
+	 public void stroke(Double r, Double g, Double b){
+	 stroke((float)r, (float)g, (float)b);
+	 }
+	 public void stroke(Double r, Double g, Double b, Double a){
+	 stroke((float)r, (float)g, (float)b, (float)a);
+	 }
+	 public void rect(Double xx, Double xy, Double w, Double h){
+	 rect((float)xx, (float)xy, (float)w, (float)h);
+	 }
+	 public void ellipse(Double xx, Double xy, Double w, Double h){
+	 ellipse((float)xx, (float)xy, (float)w, (float)h);
+	 }
+	 public void translate(Double x, Double y, Double z){
+	 translate((float)x, (float) y, (float)z);
+	 }
+	 public void translate(Double x, Double y){
+	 translate((float)x, (float) y);
+	 }
+	 public void scale(Double xy){
+	 scale((float)xy);
+	 }
+	 public void scale(Double x, Double y, Double z){
+	 scale((float)x, (float) y, (float)z);
+	 }
+	 public void rotate(Double z){
+	 rotate((float)z);
+	 }
+	 public void rotate(Double x, Double y, Double z){
+	 rotate((float)x, (float) y, (float)z);
+	 }*/
 }

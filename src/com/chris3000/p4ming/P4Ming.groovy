@@ -101,8 +101,8 @@ class P4Ming {
 	}
 
 	public void start(){
-		p4e = new P4Editor();
-		p4e.setParent (this);
+		p4e = new P4Editor(this);
+		//p4e.setParent (this);
 		p4e.setVisible(true);
 	}
 	
@@ -115,7 +115,11 @@ class P4Ming {
 			p4v.setText(text);
 		}
 	}
-	
+	public void changeCodeID(int codeID){
+		if (p4v != null){
+			p4v.changeCodeID(codeID);
+		}
+	}
 	public static void main(String[] args){
 		//put menu bar at top of screen and not on the app.
 		System.setProperty ("apple.laf.useScreenMenuBar", "true");

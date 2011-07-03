@@ -148,6 +148,16 @@ public class P4Viewer extends WindowAdapter{
 		}
 	}
 	
+	public void addCodeContainer(int codeID){
+		if (p4a != null){
+			p4a.addCodeContainer(codeID);
+		}
+	}
+	
+	public void changeCodeID(int codeID){
+		p4a.changeCodeID(codeID);
+	}
+	
 	private int[] getCenterScreen(int w, int h){
 		// Get the size of the screen
 		Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();

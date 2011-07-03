@@ -4,6 +4,7 @@ import java.io.Serializable;
 
 public class P4Message implements Serializable{
 	public String name;
+	public int codeID;
 	public static final byte METHOD = 10;
 	public static final byte PROPERTY = 20;
 	public static final byte CLASS = 30;
@@ -12,10 +13,11 @@ public class P4Message implements Serializable{
 	public byte type = UNKNOWN;
 	public Object value;
 	
-	public P4Message(String name, Object value, byte type){
+	public P4Message(String name, Object value, byte type, int codeID){
 		this.name = name;
 		this.value = value;
 		this.type = type;
+		this.codeID = codeID;
 	}
 	
 	public String getTypeString(){
