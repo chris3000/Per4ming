@@ -174,7 +174,7 @@ public class P4Text {
 				p.fill(255,255,255,128f*currentFadePct);
 				p.noStroke();
 				if (cursor.isVisible()){
-				p.rect(cursorX, cursorY, 40, -70);
+					p.rect(cursorX, cursorY, 40, -70);
 				}
 				if(cursor.isSelected()){
 					Point[] range = cursor.getSelectRange();
@@ -240,6 +240,7 @@ public class P4Text {
 	
 	public void setSelection(Point dot, Point mark){
 		cursor.selectOn(dot, mark);
+		caretEvent(dot);
 		resetFade();
 	}
 	

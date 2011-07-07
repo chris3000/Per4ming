@@ -1,6 +1,7 @@
 package com.chris3000.p4ming.editor.project;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.ComponentOrientation;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -35,6 +36,7 @@ import javax.swing.event.CaretListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.Caret;
 import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
 
@@ -47,10 +49,11 @@ import com.chris3000.p4ming.editor.P4KeyStroke;
 public class P4Container extends JSplitPane {
 	public int id = -1;
 	P4Editor parent = null;
-	JTextField activePropField = null;
+	//JTextField activePropField = null;
 	String propFieldPreviousText = null;
 	public ArrayList<String> runOncePreviousText = new ArrayList<String>();  //  @jve:decl-index=0:
-	P4Class activeTextArea = null;
+	//P4Class activeTextArea = null;
+	P4ActiveCode activeCode=null;
 	ArrayList<String> properties = new ArrayList<String>();
 	ArrayList<String> runOnce = new ArrayList<String>();
 	ArrayList<P4Class> classes = new ArrayList<P4Class>();
@@ -217,31 +220,15 @@ public class P4Container extends JSplitPane {
 		jTextField.setHorizontalAlignment(JTextField.LEFT);
 		jTextField.setPreferredSize(new Dimension(10, 28));
 		jTextField.setMaximumSize(new Dimension(900, 28));
-		jTextField.addCaretListener(new CaretLoc(CaretLoc.FIELD));
+		jTextField.addCaretListener(new CaretLoc(P4ActiveCode.TEXT_FIELD));
 		jTextField.addFocusListener(new FocusListen(jTextField.getDocument()));
 		jTextField.getDocument().addDocumentListener(new DocListener());
 		jTextField.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent evt) {
-				String propFieldText=activePropField.getText();
+				String propFieldText=activeCode.getText();
 				parent.submitProperty(propFieldText, id);
 				propFieldPreviousText=propFieldText;
 				//System.out.println("Action performed!!");
-			}
-		});
-		jTextField.addFocusListener(new java.awt.event.FocusAdapter() {   
-			public void focusLost(java.awt.event.FocusEvent e) {
-				String propFieldText = activePropField.getText();
-				if (!propFieldText.equals(propFieldPreviousText)){
-					parent.submitProperty(activePropField.getText(), id);
-				}
-				activePropField = null;
-				propFieldPreviousText=propFieldText;
-				//System.out.println("focusLost()"); // TODO Auto-generated Event stub focusLost()
-			}
-			public void focusGained(java.awt.event.FocusEvent e) {
-				activePropField = (JTextField)e.getSource();
-				activeText = activePropField.getText();
-				//System.out.println("focusGained()"); // TODO Auto-generated Event stub focusGained()
 			}
 		});
 		jTextField.setCaretPosition(0);
@@ -270,7 +257,7 @@ public class P4Container extends JSplitPane {
 		if (editorPane == null) {
 			editorPane = new JScrollPane();
 			editorPane.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.RAISED));
-			editorPane.setViewportView(activeTextArea);
+			editorPane.setViewportView((P4Class)activeCode.component);
 		}
 		return editorPane;
 	}
@@ -279,8 +266,9 @@ public class P4Container extends JSplitPane {
 		if (classList == null) {
 			DefaultListModel classListModel = new DefaultListModel();
 			//classListModel.setSize(1);
-			activeTextArea = createClass("main");
+			P4Class activeTextArea = createClass("main");
 			activeTextArea.setCaretPosition(0);
+			activeCode = new P4ActiveCode(activeTextArea, 0);
 			classListModel.addElement(activeTextArea);
 			classList = new JList(classListModel);
 			//classList.set
@@ -295,9 +283,10 @@ public class P4Container extends JSplitPane {
 			.addListSelectionListener(new javax.swing.event.ListSelectionListener() {
 				public void valueChanged(javax.swing.event.ListSelectionEvent e) {
 					if (classList.getSelectedIndex()>-1){
-						activeTextArea = (P4Class) classList.getSelectedValue();
-						setEditorPaneView(activeTextArea);
-						parent.getCurrentText(activeTextArea.getText());
+						P4Class p4c = (P4Class) classList.getSelectedValue();
+						activeCode = new P4ActiveCode(p4c, classList.getSelectedIndex());
+						setEditorPaneView(p4c);
+						parent.getCurrentText(p4c.getText());
 						System.out.println("valueChanged() "+System.currentTimeMillis()); // TODO Auto-generated Event stub valueChanged()
 					}
 				}
@@ -334,7 +323,7 @@ public class P4Container extends JSplitPane {
 			}
 			editorTextArea.setName(name);
 		}
-		editorTextArea.addCaretListener(new CaretLoc(CaretLoc.AREA));
+		editorTextArea.addCaretListener(new CaretLoc(P4ActiveCode.TEXT_AREA));
 		editorTextArea.addFocusListener(new FocusListen(editorTextArea.getDocument()));
 		editorTextArea.getDocument().addDocumentListener(new DocListener());
 		//editorTextArea.addKeyListener(new CodeKeyListener());
@@ -363,18 +352,37 @@ public class P4Container extends JSplitPane {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
 					DefaultListModel listModel = (DefaultListModel)classList.getModel();
 					int index = listModel.getSize();
-					activeTextArea = createClass("MyClass"+index);
+					P4Class activeTextArea = createClass("MyClass"+index);
 					activeTextArea.setCaretPosition(0);
+					activeCode = new P4ActiveCode(activeTextArea, index);
 					listModel.addElement(activeTextArea);
 					classList.setSelectedIndex(index);
 					classList.revalidate();
 					classList.repaint();
 					setEditorPaneView(activeTextArea);
-					System.out.println("actionPerformed()"); // TODO Auto-generated Event stub actionPerformed()
+					System.out.println("class active code is from class index "+activeCode.componentIndex); // TODO Auto-generated Event stub focusGained()
 				}
 			});
 		}
 		return classButton;
+	}
+	
+	public void updateActiveCode(){
+		if (activeCode != null){
+			if (activeCode.type == P4ActiveCode.TEXT_AREA){
+				classList.setSelectedIndex(activeCode.componentIndex);
+				activeCode.component.requestFocus();
+				activeCode.setCaretPosition();
+				caretEvent(activeCode.component, activeCode.type, activeCode.dot, activeCode.mark);
+				System.out.println("resetting active code to class index "+activeCode.componentIndex);
+			} else if (activeCode.type == P4ActiveCode.TEXT_FIELD){
+				jPanel.getComponent(activeCode.componentIndex).requestFocus();
+				activeCode.setCaretPosition();
+				System.out.println("resetting active code to property index "+activeCode.componentIndex);
+			}
+		} else {
+			System.out.println("active code is null in updateActiveCode()");
+		}
 	}
 	
 	public Point getDocXYLoc(JTextArea textArea, int offset){
@@ -388,38 +396,47 @@ public class P4Container extends JSplitPane {
 		}
 		return loc;
 	}
+
+	public Point getDocXYLoc(P4ActiveCode code, int offset){
+		Point loc = new Point();
+		if (code.type == P4ActiveCode.TEXT_AREA){
+			JTextArea textArea = (JTextArea) code.component;
+			try {
+				loc.y = textArea.getLineOfOffset(offset);
+				loc.x = offset-textArea.getLineStartOffset(loc.y);
+			} catch (BadLocationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} else if (code.type== P4ActiveCode.TEXT_FIELD){
+			JTextField textField = (JTextField) code.component;
+			loc.y=0;
+			loc.x = textField.getCaretPosition();
+		}
+		return loc;
+	}
 	
 	class CaretLoc implements CaretListener {
 		
-		static final byte FIELD = 10;
-		static final byte AREA = 20;
-		byte textType = AREA;
+		byte textType = P4ActiveCode.UNKNOWN;
 		
 		public CaretLoc(byte type){
 			textType=type;
 		}
 		
 		public void caretUpdate(CaretEvent caretEvent) {
+			System.out.println("CARET UPDATE!!!");
+			Object textObject = caretEvent.getSource();
 			int dot = caretEvent.getDot();
 			int mark = caretEvent.getMark();
+			if (activeCode != null){
+				activeCode.dot = dot;
+				activeCode.mark=mark;
+			}else {
+				System.out.println("active code is null in caretUpdate()");
+			}
 			//System.out.println(""+dot+","+mark);
-			Point dotLoc = null;
-			if (textType == AREA){
-				dotLoc = getDocXYLoc(activeTextArea,dot);
-			} else if (textType==FIELD){
-				dotLoc = new Point(dot,0);
-			}
-			if(mark != dot){ //selection
-				Point markLoc = null;
-				if (textType==AREA){
-					markLoc= getDocXYLoc(activeTextArea,mark);
-				}else if (textType==FIELD){
-					markLoc = new Point(mark,0);
-				}
-				parent.caretEvent(dotLoc,markLoc);
-			} else { 
-				parent.caretEvent(dotLoc);
-			}
+			caretEvent(textObject,textType, dot, mark);
 
 			// System.out.println("Dot: "+ caretEvent.getDot()+" Mark: "+caretEvent.getMark());
 
@@ -433,6 +450,38 @@ public class P4Container extends JSplitPane {
 			this.doc = doc;
 		}
 		public void focusGained(java.awt.event.FocusEvent e) {
+			if (e.getSource() instanceof JTextField){
+				JTextField activeProperty = (JTextField) e.getSource();
+				int index = 0;
+				Component[] comps = jPanel.getComponents();
+				for (int i = 0; i < comps.length; i++) {
+					Component c = comps[i];
+					if (c.equals(activeProperty)){
+						index = i;
+						System.out.println("active property index = "+index);
+						break;
+					}
+				}
+				activeCode = new P4ActiveCode(activeProperty, index);
+			activeText = activeCode.getText();
+			System.out.println("active code is from property index "+activeCode.componentIndex); // TODO Auto-generated Event stub focusGained()
+			} else if (e.getSource() instanceof P4Class){
+				P4Class activeClass = (P4Class)e.getSource();
+				int index = classList.getSelectedIndex();
+				if (index < 0){
+					for (int i =0; i < classList.getModel().getSize(); i++){
+						Object obj = classList.getModel().getElementAt(i);
+						if (obj.equals(activeClass)){
+							index = i;
+							System.out.println("active class index = "+index);
+							break;
+						}
+					}
+				}
+				activeCode = new P4ActiveCode(activeClass, index);
+				System.out.println("active code is from class index "+activeCode.componentIndex); // TODO Auto-generated Event stub focusGained()
+
+			}
 			//System.out.println("focusGained()"); // TODO Auto-generated Event stub focusGained()
 			try {
 				String txt = doc.getText(doc.getStartPosition().getOffset(), doc.getEndPosition().getOffset());
@@ -446,8 +495,15 @@ public class P4Container extends JSplitPane {
 
 		@Override
 		public void focusLost(FocusEvent e) {
-			// TODO Auto-generated method stub
-
+			if (e.getSource() instanceof JTextField){
+			String propFieldText = activeCode.getText();
+			if (!propFieldText.equals(propFieldPreviousText)){
+				parent.submitProperty(activeCode.getText(), id);
+			}
+			//activePropField = null;
+			propFieldPreviousText=propFieldText;
+			//System.out.println("focusLost()"); // TODO Auto-generated Event stub focusLost()
+			}
 		}
 
 	}
@@ -464,7 +520,7 @@ public class P4Container extends JSplitPane {
 			String changedText = null;
 			try {
 				changedText = e.getDocument().getText(e.getOffset(), e.getLength());
-				Point addLoc = getDocXYLoc(activeTextArea,e.getOffset());
+				Point addLoc = getDocXYLoc(activeCode,e.getOffset());
 				checkClassName(e.getLength());
 				parent.addText(addLoc, changedText);
 			} catch (BadLocationException e1) {
@@ -476,26 +532,56 @@ public class P4Container extends JSplitPane {
 		@Override
 		public void removeUpdate(DocumentEvent e) {
 			//System.out.println("length="+e.getLength()+", offset="+e.getOffset()+", type="+e.getType());
-			Point removeLoc = getDocXYLoc(activeTextArea,e.getOffset());
+			Point removeLoc = null;
+			if (activeCode.type == P4ActiveCode.TEXT_AREA){
+				removeLoc = getDocXYLoc(activeCode,e.getOffset());
+			} else {
+				removeLoc = new Point(e.getOffset(),0);
+			}
 			checkClassName(e.getLength());
+			System.out.println("removing from loc "+removeLoc.toString());
 			parent.removeText(removeLoc,e.getLength());
 		}	
 	}
 	
 	private void checkClassName(int textLength) {
-		boolean force = false;
-		if (textLength>1){
-			force = true;
-		}
-		boolean nameChanged = activeTextArea.checkClassName(force);
-		if (nameChanged){
-			System.out.println("name changed to "+activeTextArea.getName());
-			//DefaultListModel listModel = (DefaultListModel)classList.getModel();
-			//listModel.indexOf(activeTextArea);
-			classList.revalidate();
-			classList.repaint();
+		if (activeCode.type==P4ActiveCode.TEXT_AREA){
+			boolean force = false;
+			if (textLength>1){
+				force = true;
+			}
+			P4Class p4c = (P4Class)activeCode.component;
+			boolean nameChanged = p4c.checkClassName(force);
+			if (nameChanged){
+				System.out.println("name changed to "+p4c.getName());
+				//DefaultListModel listModel = (DefaultListModel)classList.getModel();
+				//listModel.indexOf(activeTextArea);
+				classList.revalidate();
+				classList.repaint();
+			}
 		}
 	}
+	
+	private void caretEvent(Object textObject, byte textType, int dot, int mark) {
+		Point dotLoc = null;
+		if (textType == P4ActiveCode.TEXT_AREA){
+			dotLoc = getDocXYLoc((P4Class)textObject,dot);
+		} else if (textType==P4ActiveCode.TEXT_FIELD){
+			dotLoc = new Point(dot,0);
+		}
+		if(mark != dot){ //selection
+			Point markLoc = null;
+			if (textType==P4ActiveCode.TEXT_AREA){
+				markLoc= getDocXYLoc((P4Class)textObject,mark);
+			}else if (textType==P4ActiveCode.TEXT_FIELD){
+				markLoc = new Point(mark,0);
+			}
+			parent.caretEvent(dotLoc,markLoc);
+		} else { 
+			parent.caretEvent(dotLoc);
+		}
+	}
+
 	class EnterAction extends AbstractAction {
 		P4Class textArea;
 		final static private char TAB = '\t';

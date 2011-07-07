@@ -263,13 +263,14 @@ public class P4Editor extends JFrame{
 		 return loc;
 	 }
 
-	 /*	public void getCurrentText(){
-		p4m.setText(activeTextArea.getText());
-	}*/
+	 	public void getCurrentText(){
+		p4m.setText(getActiveContainer().getActiveText());
+	}
 
 	 public void getCurrentText(String text){
 		 p4m.setText(text);
 	 }
+
 
 	 /**
 	  * This method initializes controlPanel	
@@ -542,6 +543,7 @@ public class P4Editor extends JFrame{
 			 tabPane.addChangeListener(new javax.swing.event.ChangeListener() {
 				 public void stateChanged(javax.swing.event.ChangeEvent e) {
 					P4Container p4c=getActiveContainer();
+					p4c.updateActiveCode();
 					getCurrentText(p4c.getActiveText());
 				 }
 			 });

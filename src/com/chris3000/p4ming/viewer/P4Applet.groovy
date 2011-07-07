@@ -182,7 +182,7 @@ class P4Applet extends PApplet{
 	}
 
 	public void caretEvent(Point dot){
-		p4text.caretEvent(dot)
+		p4text.caretEvent(dot);
 		p4text.selectionOff();
 	}
 
