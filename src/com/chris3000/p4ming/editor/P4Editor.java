@@ -1,16 +1,25 @@
 package com.chris3000.p4ming.editor;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Insets;
 import java.awt.Point;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 import javax.swing.AbstractAction;
 import javax.swing.DefaultListModel;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.KeyStroke;
 
 import java.awt.GridBagLayout;
 import javax.swing.BorderFactory;
@@ -32,6 +41,7 @@ import com.chris3000.p4ming.P4Ming;
 import com.chris3000.p4ming.P4Prefs;
 import com.chris3000.p4ming.editor.project.P4Class;
 import com.chris3000.p4ming.editor.project.P4Container;
+import com.chris3000.p4ming.util.ReadWriteFile;
 
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -43,6 +53,8 @@ import java.awt.event.WindowEvent;
 import java.awt.Font;
 import java.awt.CardLayout;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
@@ -50,7 +62,6 @@ import javax.swing.JMenuItem;
 
 import org.gjt.sp.jedit.Buffer;
 import org.gjt.sp.jedit.View;
-import processing.app.syntax.JEditTextArea;
 import javax.swing.JList;
 import javax.swing.JTabbedPane;
 import java.awt.Color;
@@ -64,12 +75,19 @@ import javax.swing.BoxLayout;
 import java.awt.GridLayout;
 
 public class P4Editor extends JFrame{
+	private final static int TAB_MAX = 9;
 	/*	JTextField activePropField = null;
 	String propFieldPreviousText = null;*/
 	/*	ArrayList<String> runOncePreviousText = new ArrayList<String>();  //  @jve:decl-index=0:
 	P4Class activeTextArea = null;*/
 	private P4Prefs p4p = new P4Prefs(); //  @jve:decl-index=0:
 	private P4Editor p4e = null;  //this instance
+	private KeyStroke cmdN = KeyStroke.getKeyStroke(KeyEvent.VK_N, ActionEvent.META_MASK);
+	private KeyStroke cmdS = KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.META_MASK);  //  @jve:decl-index=0:
+	private KeyStroke cmdShiftS = KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.META_MASK+ActionEvent.SHIFT_MASK);
+	private KeyStroke cmdO = KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.META_MASK);
+	private KeyStroke cmdQ = KeyStroke.getKeyStroke(KeyEvent.VK_Q, ActionEvent.META_MASK);
+
 	/*	private KeyStroke cmdI = KeyStroke.getKeyStroke(KeyEvent.VK_I, ActionEvent.META_MASK);  //  @jve:decl-index=0:
 	private KeyStroke altEnter = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, ActionEvent.ALT_MASK);  //  @jve:decl-index=0:
 	private KeyStroke enter = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0);  //  @jve:decl-index=0:
@@ -103,7 +121,15 @@ public class P4Editor extends JFrame{
 	 //private JButton classButton = null;
 	 private JButton runOnceWindow = null;
 	 private JButton addContainerButton = null;
-	 /**
+	private JMenuItem saveMenuItem = null;
+	private JMenuItem openMenuItem = null;
+	private JMenuItem newMenuItem = null;
+	private JMenuItem saveAsMenuItem = null;
+	private JMenuItem quitMenuItem = null;
+	private final static String NEW_PROJECT = "<new project>";  //  @jve:decl-index=0:
+	private String projectName = NEW_PROJECT;  //  @jve:decl-index=0:
+	private File projectDir = null;
+	/**
 	  * This is the default constructor
 	  */
 	 public P4Editor(P4Ming _p4m) {
@@ -144,7 +170,7 @@ public class P4Editor extends JFrame{
 		 this.setBackground(new Color(51, 51, 51));
 		 this.setJMenuBar(getJmenuBar());
 		 this.setContentPane(getJContentPane());
-		 this.setTitle("P4Ming Editor");
+		 setProjectName(NEW_PROJECT);
 		 this.addWindowListener(new java.awt.event.WindowAdapter() { 
 			 public void windowClosing(WindowEvent e) {    
 				 //System.out.println("windowClosing()"); // 
@@ -416,6 +442,14 @@ public class P4Editor extends JFrame{
 			 File = new JMenu();
 			 File.setName("File");
 			 File.setText("File");
+			 File.add(getNewMenuItem());
+			 File.addSeparator();
+			 File.add(getOpenMenuItem());
+			 File.addSeparator();
+			 File.add(getSaveMenuItem());
+			 File.add(getSaveAsMenuItem());
+			 File.add(getQuitMenuItem());
+			 File.addSeparator();
 		 }
 		 return File;
 	 }
@@ -542,9 +576,11 @@ public class P4Editor extends JFrame{
 			 tabPane.setBackground(new Color(51, 51, 51));
 			 tabPane.addChangeListener(new javax.swing.event.ChangeListener() {
 				 public void stateChanged(javax.swing.event.ChangeEvent e) {
-					P4Container p4c=getActiveContainer();
-					p4c.updateActiveCode();
-					getCurrentText(p4c.getActiveText());
+					 P4Container p4c=getActiveContainer();
+					 if (p4c != null){
+						 p4c.updateActiveCode();
+						 getCurrentText(p4c.getActiveText());
+					 }
 				 }
 			 });
 			 P4Container p4c = getNewContainer(tabPane.getTabCount()+1);
@@ -559,6 +595,10 @@ public class P4Editor extends JFrame{
 		 tabPane.addTab(tabName, p4c);
 	 }
 
+	 private void clearContainers(){
+		 tabPane.removeAll();
+	 }
+	 
 	 private P4Container getNewContainer(int id){
 		 P4Container p4c = new P4Container(this, id);
 		 createKeyBinding(id);
@@ -1234,16 +1274,240 @@ public class P4Editor extends JFrame{
 			 addContainerButton.setText("Add Container");
 			 addContainerButton.addActionListener(new java.awt.event.ActionListener() {
 				 public void actionPerformed(java.awt.event.ActionEvent e) {
-					 int codeID = tabPane.getTabCount()+1;
-					 addContainer(getNewContainer(codeID));
-					 tabPane.setSelectedIndex(codeID-1);
-					 System.out.println("tab added");
-
+					 int tabCount = tabPane.getTabCount();
+					 if (tabCount<TAB_MAX){
+						 int codeID = tabCount+1;
+						 addContainer(getNewContainer(codeID));
+						 tabPane.setSelectedIndex(codeID-1);
+						 System.out.println("tab added");
+					 }
 				 }
 			 });
 		 }
 		 return addContainerButton;
 	 }
+
+	/**
+	 * This method initializes saveMenuItem	
+	 * 	
+	 * @return javax.swing.JMenuItem	
+	 */
+	private JMenuItem getSaveMenuItem() {
+		if (saveMenuItem == null) {
+			saveMenuItem = new JMenuItem();
+			saveMenuItem.setText("Save");
+			saveMenuItem.setAccelerator(cmdS);
+			saveMenuItem.addActionListener(new java.awt.event.ActionListener() {
+				public void actionPerformed(java.awt.event.ActionEvent e) {
+					System.out.println("save actionPerformed()"); // TODO Auto-generated Event stub actionPerformed()
+						projectDir = saveProject(projectDir, false);
+						if (projectDir != null){
+							setProjectName(projectDir.getName());
+						}
+				}
+			});
+		}
+		return saveMenuItem;
+	}
+
+	private void setProjectName(String name){
+		if (name != null){
+			projectName = name;
+		}
+		 this.setTitle("P4Ming Editor "+projectName);
+	}
+	
+	/**
+	 * This method initializes openMenuItem	
+	 * 	
+	 * @return javax.swing.JMenuItem	
+	 */
+	private JMenuItem getOpenMenuItem() {
+		if (openMenuItem == null) {
+			openMenuItem = new JMenuItem();
+			openMenuItem.setText("Open...");
+			openMenuItem.setAccelerator(cmdO);
+			openMenuItem.addActionListener(new java.awt.event.ActionListener() {
+				public void actionPerformed(java.awt.event.ActionEvent e) {
+					projectDir = openProject(projectDir);
+					if (projectDir != null){
+						setProjectName(projectDir.getName());
+					}
+				}
+			});
+		}
+		return openMenuItem;
+	}
+
+	/**
+	 * This method initializes newMenuItem	
+	 * 	
+	 * @return javax.swing.JMenuItem	
+	 */
+	private JMenuItem getNewMenuItem() {
+		if (newMenuItem == null) {
+			newMenuItem = new JMenuItem();
+			newMenuItem.setText("New Project");
+			newMenuItem.setAccelerator(cmdN);
+			newMenuItem.addActionListener(new java.awt.event.ActionListener() {
+				public void actionPerformed(java.awt.event.ActionEvent e) {
+					System.out.println("new actionPerformed()"); // TODO Auto-generated Event stub actionPerformed()
+				}
+			});
+		}
+		return newMenuItem;
+	}
+
+	/**
+	 * This method initializes saveAsMenuItem	
+	 * 	
+	 * @return javax.swing.JMenuItem	
+	 */
+	private JMenuItem getSaveAsMenuItem() {
+		if (saveAsMenuItem == null) {
+			saveAsMenuItem = new JMenuItem();
+			saveAsMenuItem.setText("Save As...");
+			saveAsMenuItem.setAccelerator(cmdShiftS);
+			saveAsMenuItem.addActionListener(new java.awt.event.ActionListener() {
+				public void actionPerformed(java.awt.event.ActionEvent e) {
+					System.out.println("save as... actionPerformed()"); // TODO Auto-generated Event stub actionPerformed()
+					projectDir = saveProject(projectDir, true);//force save as = true
+					if (projectDir != null){
+						setProjectName(projectDir.getName());
+					}
+				}
+			});
+		}
+		return saveAsMenuItem;
+	}
+
+	private File openProject(File _projectDir) {
+		JFileChooser chooser = new JFileChooser();
+		//chooser.setCurrentDirectory(new File(fileName));
+		if (_projectDir != null){
+			chooser.setCurrentDirectory(_projectDir);
+		}
+		boolean fileSuccess = false;
+		chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+		int returnVal = chooser.showOpenDialog(null);
+		if (returnVal == JFileChooser.APPROVE_OPTION) {
+			_projectDir = chooser.getSelectedFile();
+			fileSuccess = true;
+		}
+		if (!_projectDir.exists()){
+			fileSuccess = _projectDir.mkdir();
+		}
+		if (fileSuccess){
+			clearContainers();
+			File[] containers = _projectDir.listFiles();
+			for (int i = 0; i < containers.length; i++) {
+				File container = containers[i];
+				if (container.isDirectory()){
+					int id = Integer.parseInt(container.getName());
+					P4Container p4c = new P4Container(this, id, container.listFiles());
+					addContainer(p4c);
+				}
+			}
+		}
+		return _projectDir;
+	}
+	
+	 private List<File> getFileListing(File aStartingDir) throws FileNotFoundException {
+		    List<File> result = new ArrayList<File>();
+		    File[] filesAndDirs = aStartingDir.listFiles();
+		    List<File> filesDirs = Arrays.asList(filesAndDirs);
+		    for(File file : filesDirs) {
+		    	if (!file.getName().startsWith(".")){ //no hidden files
+		      result.add(file); //always add, even if directory
+		    	}
+		      if ( file.isDirectory() ) {
+		        List<File> deeperList = getFileListing(file);
+		        result.addAll(deeperList);
+		      }
+		    }
+		    return result;
+		  }
+
+		  /**
+		  * Directory is valid if it exists, does not represent a file, and can be read.
+		  */
+		   private void validateDirectory (File aDirectory) throws FileNotFoundException {
+		    if (aDirectory == null) {
+		      throw new IllegalArgumentException("Directory should not be null.");
+		    }
+		    if (!aDirectory.exists()) {
+		      throw new FileNotFoundException("Directory does not exist: " + aDirectory);
+		    }
+		    if (!aDirectory.isDirectory()) {
+		      throw new IllegalArgumentException("Is not a directory: " + aDirectory);
+		    }
+		    if (!aDirectory.canRead()) {
+		      throw new IllegalArgumentException("Directory cannot be read: " + aDirectory);
+		    }
+		  }
+		  
+	private File saveProject(File _projectDir, boolean forceSaveAs) {
+		JFileChooser chooser = new JFileChooser();
+		//chooser.setCurrentDirectory(new File(fileName));
+		if (_projectDir != null){
+			chooser.setCurrentDirectory(_projectDir);
+		}
+		if (_projectDir == null || forceSaveAs){
+			chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+			int returnVal = chooser.showSaveDialog(null);
+			if (returnVal == JFileChooser.APPROVE_OPTION) {
+				_projectDir = chooser.getSelectedFile();
+			}
+		}
+		boolean fileSuccess = true;
+		if (!_projectDir.exists()){
+			fileSuccess = _projectDir.mkdir();
+		}
+		if (fileSuccess){
+			//System.out.println("tab count = "+tabPane.getTabCount());
+			for (int i = 0; i < tabPane.getTabCount(); i++){
+				P4Container p4c = (P4Container) tabPane.getComponentAt(i);
+				//System.out.println("Saving container "+i+": "+p4c);
+				p4c.save(_projectDir);
+			}
+		}
+		return _projectDir;
+	}
+	/**
+	 * This method initializes quitMenuItem	
+	 * 	
+	 * @return javax.swing.JMenuItem	
+	 */
+	private JMenuItem getQuitMenuItem() {
+		if (quitMenuItem == null) {
+			quitMenuItem = new JMenuItem();
+			quitMenuItem.setAccelerator(cmdQ);
+			quitMenuItem.setText("Quit");
+			quitMenuItem.addActionListener(new java.awt.event.ActionListener() {
+				public void actionPerformed(java.awt.event.ActionEvent e) {
+					JOptionPane quitOptionPane = new JOptionPane("Would you like to save before quitting?", JOptionPane.QUESTION_MESSAGE, JOptionPane.YES_NO_CANCEL_OPTION);
+					JDialog quitDialog = quitOptionPane.createDialog("Quit");
+					quitDialog.setVisible(true);
+					Object selectedValue = quitOptionPane.getValue();
+					if (selectedValue.equals(JOptionPane.YES_OPTION)||selectedValue.equals(JOptionPane.NO_OPTION)){
+						//save
+						quitApp((Integer)selectedValue);
+					} else {
+						System.out.println("cancelled quit.");
+					}
+				}
+			});
+		}
+		return quitMenuItem;
+	}
+	
+	public void quitApp(Integer saveFirst){
+		if(saveFirst.equals(JOptionPane.YES_OPTION)){
+			//save first
+		}
+		System.out.println("Exiting Per4Ming.  Bye.");
+		System.exit(0);
+	}
 }
 
 

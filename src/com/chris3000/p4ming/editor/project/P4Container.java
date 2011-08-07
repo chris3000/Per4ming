@@ -13,6 +13,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.swing.AbstractAction;
@@ -42,6 +45,7 @@ import javax.swing.text.JTextComponent;
 
 import com.chris3000.p4ming.editor.P4Editor;
 import com.chris3000.p4ming.editor.P4KeyStroke;
+import com.chris3000.p4ming.util.ReadWriteFile;
 
 
 
@@ -54,9 +58,8 @@ public class P4Container extends JSplitPane {
 	public ArrayList<String> runOncePreviousText = new ArrayList<String>();  //  @jve:decl-index=0:
 	//P4Class activeTextArea = null;
 	P4ActiveCode activeCode=null;
-	ArrayList<String> properties = new ArrayList<String>();
+	ArrayList<String> properties = new ArrayList<String>();  //  @jve:decl-index=0:
 	ArrayList<String> runOnce = new ArrayList<String>();
-	ArrayList<P4Class> classes = new ArrayList<P4Class>();
 	JPanel classPanel;
 	JList classList;
 	JSplitPane projectPane;
@@ -71,13 +74,22 @@ public class P4Container extends JSplitPane {
 		super();
 		parent = p4e;
 		id= _id;
-		initialize();
+		initialize(null);
 		//init();
 	}
+	
+	public P4Container(P4Editor p4e, int _id, File[] files){
+		super();
+		parent = p4e;
+		id= _id;
+		initialize(files);
+		//init();
+	}
+	
 	//NEVER USE THIS!!
 	public P4Container(){
 		super();
-		initialize();
+		initialize(null);
 		//init();
 	}
 	
@@ -85,11 +97,11 @@ public class P4Container extends JSplitPane {
 	 * This method initializes this
 	 * 
 	 */
-	private void initialize() {
+	private void initialize(File[] files) {
 		setContinuousLayout(true);
 		this.setSize(new Dimension(400, 400));
 		setBackground(new Color(102, 102, 102));
-        this.setLeftComponent(getClassPanel());
+        this.setLeftComponent(getClassPanel(files));
         this.setRightComponent(getProjectPane());
 		//this.setDividerLocation(100);
 	}
@@ -129,7 +141,7 @@ public class P4Container extends JSplitPane {
 		setRightComponent(getProjectPane());
 	}*/
 	
-	private JPanel getClassPanel() {
+	private JPanel getClassPanel(File[] files) {
 		if (classPanel == null){
 		GridBagConstraints gridBagConstraints8 = new GridBagConstraints();
 		gridBagConstraints8.gridx = 0;
@@ -143,7 +155,7 @@ public class P4Container extends JSplitPane {
 		classPanel = new JPanel();
 		classPanel.setLayout(new GridBagLayout());
 		classPanel.setBackground(new Color(51, 51, 51));
-		classPanel.add(getClassList(), gridBagConstraints7);
+		classPanel.add(getClassList(files), gridBagConstraints7);
 		classPanel.add(getClassButton(), gridBagConstraints8);
 		}
 		return classPanel;
@@ -262,14 +274,29 @@ public class P4Container extends JSplitPane {
 		return editorPane;
 	}
 	
-	private JList getClassList() {
+	private JList getClassList(File[] files) {
 		if (classList == null) {
 			DefaultListModel classListModel = new DefaultListModel();
 			//classListModel.setSize(1);
-			P4Class activeTextArea = createClass("main");
-			activeTextArea.setCaretPosition(0);
-			activeCode = new P4ActiveCode(activeTextArea, 0);
-			classListModel.addElement(activeTextArea);
+			if (files == null){
+				P4Class activeTextArea = createClass("main", null);
+				activeTextArea.setCaretPosition(0);
+				activeCode = new P4ActiveCode(activeTextArea, 0);
+				classListModel.addElement(activeTextArea);
+			} else {
+				for (int i = 0; i < files.length; i++) {
+					File file = files[i];
+					if (file.getName().endsWith(".groovy")){
+						String fileText = ReadWriteFile.read(file);
+						String className = file.getName().replace(".groovy", "");
+						P4Class activeTextArea = createClass(className, fileText);
+						activeTextArea.setCaretPosition(0);
+						
+						activeCode = new P4ActiveCode(activeTextArea, 0);
+						classListModel.addElement(activeTextArea);
+					}
+				}
+			}
 			classList = new JList(classListModel);
 			//classList.set
 			classList.setPreferredSize(new Dimension(80, 80));
@@ -302,7 +329,7 @@ public class P4Container extends JSplitPane {
 	}
 	
 	
-	private P4Class createClass(String name) {
+	private P4Class createClass(String name, String code) {
 		P4Class editorTextArea = new P4Class();
 		//editorTextArea = new JEditTextArea(new processing.app.syntax.TextAreaDefaults());
 		editorTextArea.setMargin(new Insets(2,6,2,6));
@@ -311,14 +338,22 @@ public class P4Container extends JSplitPane {
 		editorTextArea.setWrapStyleWord(true);
 		if (name != null){
 			if (name.equals("main")){
+				if (code == null){
 				editorTextArea.isMain = true;
 				if (id==1){
 					editorTextArea.setText("def draw"+id+" = {->\n\t//code goes here\n\tbackground(0)\n\t//ellipse(400,100,20,20)\n}");
 				} else {
 					editorTextArea.setText("def draw"+id+" = {->\n\t\n}");
 				}
+				} else {
+					editorTextArea.setText(code);
+				}
 			} else {
+				if (code == null){
 				editorTextArea.setText("import com.chris3000.p4ming.viewer.P4Core;\n\nclass "+name+" extends P4Core {\n\t//code goes here\n}\n");
+				} else {
+					editorTextArea.setText(code);
+				}
 				editorTextArea.checkClassName(true);
 			}
 			editorTextArea.setName(name);
@@ -352,7 +387,7 @@ public class P4Container extends JSplitPane {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
 					DefaultListModel listModel = (DefaultListModel)classList.getModel();
 					int index = listModel.getSize();
-					P4Class activeTextArea = createClass("MyClass"+index);
+					P4Class activeTextArea = createClass("MyClass"+index, null);
 					activeTextArea.setCaretPosition(0);
 					activeCode = new P4ActiveCode(activeTextArea, index);
 					listModel.addElement(activeTextArea);
@@ -558,6 +593,39 @@ public class P4Container extends JSplitPane {
 				//listModel.indexOf(activeTextArea);
 				classList.revalidate();
 				classList.repaint();
+			}
+		}
+	}
+	
+	public void save(File projectDir){
+		String cFilePath = projectDir.getAbsolutePath()+"/"+id;
+		System.out.println("creating file path "+cFilePath);
+		File cDir = new File(cFilePath);
+		boolean dirExists = true;
+		if (!cDir.exists()){
+			dirExists = cDir.mkdir();
+		}
+		if (dirExists){
+			for (int i = 0; i < classList.getModel().getSize(); i++){
+				P4Class clazz = (P4Class)classList.getModel().getElementAt(i);
+				try {
+					boolean fileSuccess = true;
+					File classFile = new File(cFilePath+"/"+clazz.getName()+".groovy");
+					if (!classFile.exists()){
+						fileSuccess = classFile.createNewFile();
+					}
+					if (fileSuccess){
+						System.out.println("writing out file "+classFile.getAbsolutePath());
+						ReadWriteFile.write(classFile, clazz.getText());
+					}
+				} catch (FileNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
 			}
 		}
 	}

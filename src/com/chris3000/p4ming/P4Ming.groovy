@@ -120,6 +120,7 @@ class P4Ming {
 			p4v.changeCodeID(codeID);
 		}
 	}
+	
 	public static void main(String[] args){
 		//put menu bar at top of screen and not on the app.
 		System.setProperty ("apple.laf.useScreenMenuBar", "true");
