@@ -51,6 +51,9 @@ import com.chris3000.p4ming.util.ReadWriteFile;
 
 
 public class P4Container extends JSplitPane {
+	String headerInfo = "//Per4Ming generated file.  Do not modify by hand.\n\n";
+	String FIELDS = "FIELDS";  //  @jve:decl-index=0:
+	String CODE = "CODE";  //  @jve:decl-index=0:
 	public int id = -1;
 	P4Editor parent = null;
 	//JTextField activePropField = null;
@@ -102,7 +105,7 @@ public class P4Container extends JSplitPane {
 		this.setSize(new Dimension(400, 400));
 		setBackground(new Color(102, 102, 102));
         this.setLeftComponent(getClassPanel(files));
-        this.setRightComponent(getProjectPane());
+        this.setRightComponent(getProjectPane(files));
 		//this.setDividerLocation(100);
 	}
 	
@@ -165,19 +168,19 @@ public class P4Container extends JSplitPane {
 	 * 	
 	 * @return javax.swing.JSplitPane	
 	 */
-	private JSplitPane getProjectPane() {
+	private JSplitPane getProjectPane(File[] files) {
 		if (projectPane == null) {
 			projectPane = new JSplitPane();
 			projectPane.setBackground(new Color(102, 102, 102));
 			projectPane.setContinuousLayout(true);
 			projectPane.setResizeWeight(1.0D);
 			projectPane.setLeftComponent(getEditorPane());
-			projectPane.setRightComponent(getPropsPanel());
+			projectPane.setRightComponent(getPropsPanel(files));
 		}
 		return projectPane;
 	}
 	
-	private JPanel getPropsPanel() {
+	private JPanel getPropsPanel(File[] files) {
 		if (propsPanel == null) {
 			GridBagConstraints gridBagConstraints6 = new GridBagConstraints();
 			gridBagConstraints6.insets = new Insets(0, 0, 0, 0);
@@ -198,7 +201,7 @@ public class P4Container extends JSplitPane {
 			propsPanel.setLayout(new GridBagLayout());
 			propsPanel.setPreferredSize(new Dimension(50, 39));
 			propsPanel.setBackground(new Color(51, 51, 51));
-			propsPanel.add(getPropsFieldContainer(), gridBagConstraints5);
+			propsPanel.add(getPropsFieldContainer(files), gridBagConstraints5);
 			propsPanel.add(getAddPropButton(), gridBagConstraints6);
 		}
 		return propsPanel;
@@ -217,7 +220,7 @@ public class P4Container extends JSplitPane {
 			addPropButton.setIcon(new ImageIcon(getClass().getResource("/editor/new_property_button.png")));
 			addPropButton.addActionListener(new java.awt.event.ActionListener() {
 				public void actionPerformed(java.awt.event.ActionEvent e) {
-					jPanel.add(getJTextField(), null);
+					jPanel.add(getJTextField(null), null);
 					jPanel.validate();
 					jPanel.repaint();
 					System.out.println("actionPerformed()"); // TODO Auto-generated Event stub actionPerformed()
@@ -227,7 +230,7 @@ public class P4Container extends JSplitPane {
 		return addPropButton;
 	}
 	
-	private JTextField getJTextField() {
+	private JTextField getJTextField(String txt) {
 		JTextField jTextField = new JTextField(2);
 		jTextField.setHorizontalAlignment(JTextField.LEFT);
 		jTextField.setPreferredSize(new Dimension(10, 28));
@@ -243,24 +246,58 @@ public class P4Container extends JSplitPane {
 				//System.out.println("Action performed!!");
 			}
 		});
-		jTextField.setCaretPosition(0);
+		if (txt != null){
+			System.out.println("Setting text field to "+txt);
+			jTextField.setText(txt);
+		} else {
+			jTextField.setCaretPosition(0);
+		}
 		return jTextField;
 	}
 	
-	private JPanel getJPanel() {
+	private JPanel getJPanel(File[] files) {
 		if (jPanel == null) {
 			jPanel = new JPanel();
-			jPanel.setLayout(new BoxLayout(getJPanel(), BoxLayout.Y_AXIS));
+			jPanel.setLayout(new BoxLayout(getJPanel(files), BoxLayout.Y_AXIS));
 			jPanel.setBackground(new Color(51, 51, 51));
-			jPanel.add(getJTextField(), null);
+			String[] fields = null;
+			if (files != null){
+				for (int i = 0; i < files.length; i++) {
+					File file=files[i];
+					if (fields == null){
+					fields = getFieldsFromFile(file);
+					}
+				}
+			}
+			if (fields == null){
+				System.out.println("fields is null!");
+				jPanel.add(getJTextField(null), null);
+			} else {
+				for (int i = 0; i < fields.length; i++) {
+					System.out.println("adding field "+fields[i]);
+					jPanel.add(getJTextField(fields[i]), null);
+				}
+			}
 		}
 		return jPanel;
 	}
+
+	private String[] getFieldsFromFile(File file){
+		if (file.getName().equals("main.groovy")){
+			String fileText = ReadWriteFile.read(file);
+			String fields = getTextBody(fileText,FIELDS);
+			String[] fSplit = fields.split("\n");
+			System.out.println("fields="+fSplit[0]);
+			return fSplit;
+		} else {
+			return null;
+		}
+	}
 	
-	private JScrollPane getPropsFieldContainer() {
+	private JScrollPane getPropsFieldContainer(File[] files) {
 		if (propsFieldContainer == null) {
 			propsFieldContainer = new JScrollPane();
-			propsFieldContainer.setViewportView(getJPanel());
+			propsFieldContainer.setViewportView(getJPanel(files));
 		}
 		return propsFieldContainer;
 	}
@@ -289,7 +326,7 @@ public class P4Container extends JSplitPane {
 					if (file.getName().endsWith(".groovy")){
 						String fileText = ReadWriteFile.read(file);
 						String className = file.getName().replace(".groovy", "");
-						P4Class activeTextArea = createClass(className, fileText);
+						P4Class activeTextArea = createClass(className, getTextBody(fileText, CODE));
 						activeTextArea.setCaretPosition(0);
 						
 						activeCode = new P4ActiveCode(activeTextArea, 0);
@@ -320,6 +357,16 @@ public class P4Container extends JSplitPane {
 			});
 		}
 		return classList;
+	}
+	
+	private String getTextBody(String text, String bodyTag){
+		int begin = text.indexOf("//<"+bodyTag+">")+bodyTag.length()+5;
+		int end = text.indexOf("//</"+bodyTag+">",begin);
+		if (begin != -1 && end != -1){
+			return text.substring(begin, end);
+		} else {
+			return "";
+		}
 	}
 	
 	private void setEditorPaneView(P4Class textArea) {
@@ -616,7 +663,11 @@ public class P4Container extends JSplitPane {
 					}
 					if (fileSuccess){
 						System.out.println("writing out file "+classFile.getAbsolutePath());
-						ReadWriteFile.write(classFile, clazz.getText());
+						StringBuilder fileText = new StringBuilder();
+						fileText.append(headerInfo);
+						fileText.append(getFieldBlock());
+						fileText.append(getCodeBlock(clazz));
+						ReadWriteFile.write(classFile, fileText.toString());
 					}
 				} catch (FileNotFoundException e) {
 					// TODO Auto-generated catch block
@@ -629,7 +680,28 @@ public class P4Container extends JSplitPane {
 			}
 		}
 	}
+	private String getFieldBlock(){
+		StringBuilder sb = new StringBuilder();
+		sb.append("//<"+FIELDS+">\n");
+		Component[] fields = jPanel.getComponents();
+		for (int j = 0; j < fields.length; j++) {
+			System.out.println(fields[j]);
+			if (fields[j] instanceof javax.swing.JTextField){
+				JTextField field = (JTextField)fields[j];
+				sb.append(field.getText()+"\n");
+			}	
+		}
+		sb.append("//</"+FIELDS+">\n");
+		return sb.toString();
+	}
 	
+	private String getCodeBlock(P4Class clazz){
+		StringBuilder sb = new StringBuilder();
+		sb.append("//<"+CODE+">\n");
+		sb.append(clazz.getText());
+		sb.append("//</"+CODE+">\n");
+		return sb.toString();
+	}
 	private void caretEvent(Object textObject, byte textType, int dot, int mark) {
 		Point dotLoc = null;
 		if (textType == P4ActiveCode.TEXT_AREA){
