@@ -4,7 +4,7 @@ import com.chris3000.p4ming.editor.P4Editor
 import com.chris3000.p4ming.editor.P4Message
 import com.chris3000.p4ming.viewer.P4Viewer
 import java.awt.Point
-
+//blah
 class P4Ming {
 	P4Editor p4e = null;
 	P4Viewer p4v = null;
